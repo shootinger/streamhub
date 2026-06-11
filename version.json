@@ -1,5 +1,5 @@
-{
-  "version": "1.0.0",
-  "url": "https://github.com/shootinger/streamhub/releases/latest",
-  "download": "https://github.com/shootinger/streamhub/releases/download/v1.0.0/StreamHub.Setup.1.0.0.exe"
+﻿{
+    "url":  "https://github.com/shootinger/streamhub/releases/latest",
+    "version":  "1.0.0",
+    "download":  "https://github.com/shootinger/streamhub/releases/download/v1.0.0/StreamHub.Setup.1.0.0.exe"
 }
