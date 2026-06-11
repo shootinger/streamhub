@@ -87,13 +87,13 @@
   /* SIDEBAR */
   .sidebar {
     width:60px; min-height:100vh; background:var(--bg2); border-right:1px solid var(--border);
-    display:flex; flex-direction:column; align-items:center; padding:10px 0; gap:4px;
+    display:flex; flex-direction:column; align-items:stretch; padding:10px 0; gap:4px;
     position:fixed; left:0; top:0; bottom:0; z-index:100; transition:width .25s ease;
   }
-  .sidebar.expanded { width:220px; align-items:flex-start; padding:10px 12px; }
+  .sidebar.expanded { width:220px; padding:10px 12px; }
   .sidebar-logo {
     display:flex; align-items:center; justify-content:center;
-    margin-bottom:10px; padding:0 4px; overflow:hidden;
+    margin-bottom:10px; overflow:hidden;
   }
   .sidebar-logo img.logo-icon { width:36px; height:36px; object-fit:contain; transition:all 0.2s; }
   .sidebar-logo img.logo-full { width:110px; height:36px; object-fit:contain; transition:all 0.2s; }
@@ -101,8 +101,9 @@
   .nav-item {
     width:36px; height:36px; border-radius:10px; display:grid; place-items:center;
     cursor:pointer; transition:all .2s; position:relative; flex-shrink:0; color:var(--text2);
+    margin:0 auto;
   }
-  .sidebar.expanded .nav-item { width:100%; display:flex; padding:0 12px; gap:12px; align-items:center; justify-content:flex-start; }
+  .sidebar.expanded .nav-item { width:calc(100% - 0px); margin:0; display:flex; padding:0 12px; gap:12px; align-items:center; justify-content:flex-start; }
   .nav-item:hover { background:var(--primary-dim); color:var(--primary); }
   .nav-item.active { background:var(--primary-dim); color:var(--primary); }
   .nav-item.active::before {
@@ -116,9 +117,9 @@
   .sidebar-toggle {
     width:36px; height:36px; border-radius:10px; background:var(--card);
     display:flex; align-items:center; justify-content:center; cursor:pointer; color:var(--text2);
-    border:1px solid var(--border); transition:all .2s; flex-shrink:0; margin-bottom:6px;
+    border:1px solid var(--border); transition:all .2s; flex-shrink:0; margin:0 auto 6px;
   }
-  .sidebar.expanded .sidebar-toggle { width:100%; }
+  .sidebar.expanded .sidebar-toggle { width:100%; margin:0 0 6px; }
   .sidebar-toggle:hover { color:var(--text); border-color:var(--primary); }
 
   /* MAIN */
