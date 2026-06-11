@@ -50,6 +50,15 @@
   .update-progress-fill { height: 100%; background: linear-gradient(90deg, var(--primary), var(--accent)); border-radius: 4px; transition: width .4s; width: 0%; }
   .update-progress-label { font-size: 13px; color: var(--text2); }
   .version-tag { font-size: 11px; color: var(--text3); margin-left: 6px; }
+
+  /* BOUTON MISE À JOUR — états */
+  #updateBtn { display: flex !important; }
+  #updateBtn.state-checking  { color: var(--text2); border-color: var(--border); }
+  #updateBtn.state-uptodate  { color: var(--accent); border-color: var(--accent); background: var(--accent-dim); }
+  #updateBtn.state-available { color: var(--yellow); border-color: var(--yellow); background: rgba(255,209,102,.12); animation: pulseBtn 2s infinite; }
+  #updateBtn.state-ready     { color: var(--primary); border-color: var(--primary); background: var(--primary-dim); animation: pulseBtn 1.5s infinite; }
+  #updateBtn.state-downloading { color: var(--blue); border-color: var(--blue); background: rgba(78,205,196,.12); }
+  @keyframes pulseBtn { 0%,100%{opacity:1} 50%{opacity:.7} }
 </style>
 <style>
   :root {
@@ -606,6 +615,10 @@
     <div class="topbar-title" id="topbarTitle">Dashboard</div>
     <div class="topbar-right">
       <div id="liveIndicator" style="display:none;" class="status-live"><div class="live-dot"></div>EN DIRECT</div>
+      <button id="updateBtn" class="btn btn-outline btn-sm" onclick="openModal('updateModal')" title="Vérifier les mises à jour" style="display:none; gap:6px;">
+        <span id="updateBtnIcon">🔄</span>
+        <span id="updateBtnLabel">Mise à jour</span>
+      </button>
       <button class="btn btn-primary btn-sm" onclick="openModal('streamModal')">+ Nouveau stream</button>
       <div class="avatar">ST</div>
     </div>
@@ -1714,7 +1727,15 @@ async function toggleMax() {
 
 // ================= MISES À JOUR =================
 let _pendingVersion = null;
-let _updateDismissed = false;
+
+function setUpdateBtn(state, label, icon) {
+  const btn = document.getElementById('updateBtn');
+  const lbl = document.getElementById('updateBtnLabel');
+  const ico = document.getElementById('updateBtnIcon');
+  btn.className = 'btn btn-outline btn-sm state-' + state;
+  if (lbl) lbl.textContent = label;
+  if (ico) ico.textContent = icon;
+}
 
 async function initUpdater() {
   if (!window.electronAPI) return;
@@ -1724,67 +1745,78 @@ async function initUpdater() {
   const tag = document.getElementById('appVersionTag');
   if (tag) tag.textContent = 'v' + v;
 
+  // État initial : vérification
+  setUpdateBtn('checking', 'Vérification…', '🔄');
+
   // Écouter les événements de téléchargement
   window.electronAPI.onDownloadProgress((pct) => {
     document.getElementById('updateProgressFill').style.width = pct + '%';
     document.getElementById('updateProgressLabel').textContent = 'Téléchargement… ' + pct + '%';
+    setUpdateBtn('downloading', pct + '%', '⬇️');
   });
 
   window.electronAPI.onDownloadReady((version) => {
     showUpdateState('ready');
     document.getElementById('updateModalClose').style.display = 'flex';
-    if (!document.getElementById('updateModal').classList.contains('open')) {
-      showUpdateBanner(version, true);
-    }
+    setUpdateBtn('ready', 'Installer v' + version, '🚀');
+    showUpdateBanner(version, true);
   });
 
   window.electronAPI.onDownloadError((msg) => {
     showUpdateState('error');
     document.getElementById('updateErrorMsg').textContent = '❌ Erreur : ' + (msg || 'Téléchargement échoué');
     document.getElementById('updateModalClose').style.display = 'flex';
+    setUpdateBtn('checking', 'Mise à jour', '🔄');
   });
 
-  // Vérifier les mises à jour au démarrage (délai 3s pour ne pas ralentir le chargement)
+  // Vérifier au démarrage (délai 3s)
   setTimeout(checkForUpdates, 3000);
 }
 
 async function checkForUpdates() {
-  if (!window.electronAPI || _updateDismissed) return;
+  if (!window.electronAPI) return;
   try {
+    setUpdateBtn('checking', 'Vérification…', '🔄');
     const result = await window.electronAPI.checkUpdate();
-    if (!result.available) return;
+
+    if (!result.available) {
+      setUpdateBtn('uptodate', 'À jour', '✅');
+      // Remettre l'icône neutre après 5s
+      setTimeout(() => setUpdateBtn('checking', 'Mise à jour', '🔄'), 5000);
+      return;
+    }
 
     _pendingVersion = result.version;
     document.getElementById('updateVersionBadge').textContent = 'v' + result.version;
 
     if (result.ready) {
       showUpdateState('ready');
+      setUpdateBtn('ready', 'Installer v' + result.version, '🚀');
       showUpdateBanner(result.version, true);
     } else {
+      showUpdateState('idle');
+      setUpdateBtn('available', 'v' + result.version + ' dispo', '⬆️');
       showUpdateBanner(result.version, false);
     }
-  } catch {}
+  } catch {
+    setUpdateBtn('checking', 'Mise à jour', '🔄');
+  }
 }
 
 function showUpdateBanner(version, ready) {
-  if (_updateDismissed) return;
   const banner = document.getElementById('updateBanner');
   const text = document.getElementById('updateBannerText');
   text.textContent = ready
     ? `v${version} téléchargée — prête à installer`
     : `v${version} disponible`;
   banner.classList.add('visible');
-
-  // Décaler le contenu principal sous la bannière
   document.querySelector('.sidebar').style.top = (38 + 46) + 'px';
   document.querySelector('.main').style.maxHeight = 'calc(100vh - ' + (38 + 46) + 'px)';
   document.querySelectorAll('.topbar').forEach(t => t.style.top = (38 + 46) + 'px');
 }
 
 function dismissUpdateBanner() {
-  _updateDismissed = true;
-  const banner = document.getElementById('updateBanner');
-  banner.classList.remove('visible');
+  document.getElementById('updateBanner').classList.remove('visible');
   document.querySelector('.sidebar').style.top = '38px';
   document.querySelector('.main').style.maxHeight = 'calc(100vh - 38px)';
   document.querySelectorAll('.topbar').forEach(t => t.style.top = '38px');
@@ -1800,6 +1832,7 @@ function showUpdateState(state) {
 async function startUpdate() {
   if (!window.electronAPI) return;
   showUpdateState('downloading');
+  setUpdateBtn('downloading', '0%', '⬇️');
   document.getElementById('updateModalClose').style.display = 'none';
   await window.electronAPI.startDownload();
 }
@@ -1810,9 +1843,8 @@ async function installAndRestart() {
 }
 
 function openReleaseNotes() {
-  if (window.electronAPI) {
+  if (window.electronAPI)
     window.electronAPI.openUrl('https://github.com/shootinger/streamhub/releases/latest');
-  }
 }
 
 // Init au chargement
