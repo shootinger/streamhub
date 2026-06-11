@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, shell, net: electronNet, Notification } = require('electron');
+const { app, BrowserWindow, ipcMain, shell, Notification } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const os = require('os');
@@ -33,46 +33,46 @@ function httpGet(url, headers = {}) {
   });
 }
 
-// Téléchargement avec progression (polling taille fichier)
+// Téléchargement binaire avec suivi de progression réelle + redirections
 function downloadFile(url, destPath, onProgress) {
   return new Promise((resolve, reject) => {
-    const estimatedTotal = 100 * 1024 * 1024; // ~100 MB
+    function doRequest(currentUrl, redirectsLeft) {
+      if (redirectsLeft <= 0) return reject(new Error('Too many redirects'));
+      const mod = currentUrl.startsWith('https') ? https : http;
+      const req = mod.get(currentUrl, { headers: { 'User-Agent': 'StreamHub-Updater' }, timeout: 30000 }, (res) => {
+        // Suivre les redirections (GitHub → S3)
+        if ([301, 302, 303, 307, 308].includes(res.statusCode)) {
+          res.resume();
+          return doRequest(res.headers.location, redirectsLeft - 1);
+        }
+        if (res.statusCode !== 200) {
+          res.resume();
+          return reject(new Error(`HTTP ${res.statusCode}`));
+        }
 
-    let watcher = null;
-    if (onProgress) {
-      watcher = setInterval(() => {
-        try {
-          const size = fs.existsSync(destPath) ? fs.statSync(destPath).size : 0;
-          onProgress(Math.min(99, Math.round((size / estimatedTotal) * 100)));
-        } catch {}
-      }, 500);
-    }
+        const total = parseInt(res.headers['content-length'] || '0', 10);
+        let received = 0;
+        const file = fs.createWriteStream(destPath);
 
-    const request = electronNet.request({ url, redirect: 'follow' });
-    request.setHeader('User-Agent', 'StreamHub-Updater');
-    request.on('response', (res) => {
-      if (res.statusCode !== 200) {
-        res.resume();
-        if (watcher) clearInterval(watcher);
-        return reject(new Error(`HTTP ${res.statusCode}`));
-      }
-      const file = fs.createWriteStream(destPath);
-      res.on('data', chunk => file.write(chunk));
-      res.on('end', () => {
-        file.end(() => {
-          if (watcher) clearInterval(watcher);
-          if (onProgress) onProgress(100);
-          resolve(destPath);
+        res.on('data', chunk => {
+          file.write(chunk);
+          received += chunk.length;
+          if (onProgress && total > 0) {
+            onProgress(Math.min(99, Math.round((received / total) * 100)));
+          }
         });
+        res.on('end', () => {
+          file.end(() => {
+            if (onProgress) onProgress(100);
+            resolve(destPath);
+          });
+        });
+        res.on('error', err => { file.destroy(); reject(err); });
       });
-      res.on('error', err => {
-        if (watcher) clearInterval(watcher);
-        file.destroy();
-        reject(err);
-      });
-    });
-    request.on('error', err => { if (watcher) clearInterval(watcher); reject(err); });
-    request.end();
+      req.on('error', reject);
+      req.on('timeout', () => { req.destroy(); reject(new Error('Timeout')); });
+    }
+    doRequest(url, 10);
   });
 }
 
@@ -215,7 +215,7 @@ ipcMain.handle('check-update', async () => {
     const current = app.getVersion();
 
     if (!remote.version || !isNewerVersion(remote.version, current)) {
-      return { available: false, current };
+      return { available: false, current, remoteVersion: remote.version || current };
     }
 
     const v = remote.version;
@@ -228,8 +228,8 @@ ipcMain.handle('check-update', async () => {
     }
 
     return { available: true, version: v, current, ready: false };
-  } catch {
-    return { available: false };
+  } catch (err) {
+    return { available: false, error: err.message };
   }
 });
 

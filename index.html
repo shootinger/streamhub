@@ -458,7 +458,7 @@
   </div>
   <div class="update-banner-actions">
     <button class="btn btn-outline btn-sm" onclick="dismissUpdateBanner()">Plus tard</button>
-    <button class="btn btn-primary btn-sm" onclick="openModal('updateModal')">⬇️ Mettre à jour</button>
+    <button class="btn btn-primary btn-sm" onclick="openUpdateModal()">⬇️ Mettre à jour</button>
   </div>
 </div>
 
@@ -470,14 +470,27 @@
       <div class="modal-close" id="updateModalClose" onclick="closeModal('updateModal')">✕</div>
     </div>
     <div class="update-modal-body">
-      <div style="color:var(--text2); font-size:13px; margin-bottom:4px;">Nouvelle version disponible</div>
-      <div class="update-version-badge" id="updateVersionBadge">v1.0.0</div>
-      <p style="font-size:13px; color:var(--text2); margin-bottom:20px;">
-        L'application sera redémarrée automatiquement après l'installation.
-      </p>
+      <!-- État : vérification initiale -->
+      <div id="updateStateChecking">
+        <div style="color:var(--text2); font-size:13px; margin-bottom:16px;">Vérification en cours…</div>
+        <div style="display:flex; justify-content:center;"><span class="spinner" style="width:24px;height:24px;border-width:3px;"></span></div>
+      </div>
+
+      <!-- État : à jour -->
+      <div id="updateStateUptodate" style="display:none;">
+        <div style="font-size:40px; margin-bottom:8px;">✅</div>
+        <div style="font-size:15px; font-weight:600; color:var(--accent);">Vous avez la dernière version</div>
+        <div id="updateCurrentVersion" style="color:var(--text2); font-size:13px; margin-top:6px;"></div>
+      </div>
 
       <!-- État : prêt à télécharger -->
-      <div id="updateStateIdle">
+      <div id="updateStateIdle" style="display:none;">
+        <div style="color:var(--text2); font-size:13px; margin-bottom:4px;">Nouvelle version disponible</div>
+        <div class="update-version-badge" id="updateVersionBadge">v–</div>
+        <div id="updateVersionCompare" style="font-size:12px; color:var(--text3); margin-bottom:16px;"></div>
+        <p style="font-size:13px; color:var(--text2); margin-bottom:20px;">
+          L'application sera redémarrée automatiquement après l'installation.
+        </p>
         <button class="btn btn-primary" style="width:100%; justify-content:center; font-size:14px;" onclick="startUpdate()">
           ⬇️ Télécharger et installer
         </button>
@@ -615,7 +628,7 @@
     <div class="topbar-title" id="topbarTitle">Dashboard</div>
     <div class="topbar-right">
       <div id="liveIndicator" style="display:none;" class="status-live"><div class="live-dot"></div>EN DIRECT</div>
-      <button id="updateBtn" class="btn btn-outline btn-sm" onclick="openModal('updateModal')" title="Vérifier les mises à jour" style="display:none; gap:6px;">
+      <button id="updateBtn" class="btn btn-outline btn-sm" onclick="openUpdateModal()" title="Vérifier les mises à jour" style="display:none; gap:6px;">
         <span id="updateBtnIcon">🔄</span>
         <span id="updateBtnLabel">Mise à jour</span>
       </button>
@@ -1745,8 +1758,8 @@ async function initUpdater() {
   const tag = document.getElementById('appVersionTag');
   if (tag) tag.textContent = 'v' + v;
 
-  // État initial : vérification
-  setUpdateBtn('checking', 'Vérification…', '🔄');
+  // Bouton visible, état neutre
+  setUpdateBtn('checking', 'Mise à jour', '🔄');
 
   // Écouter les événements de téléchargement
   window.electronAPI.onDownloadProgress((pct) => {
@@ -1769,25 +1782,33 @@ async function initUpdater() {
     setUpdateBtn('checking', 'Mise à jour', '🔄');
   });
 
-  // Vérifier au démarrage (délai 3s)
-  setTimeout(checkForUpdates, 3000);
+  // Vérification silencieuse au démarrage (pas de résultat dans le modal)
+  setTimeout(() => checkForUpdates(false), 3000);
 }
 
-async function checkForUpdates() {
+async function checkForUpdates(showModalResult = false) {
   if (!window.electronAPI) return;
   try {
     setUpdateBtn('checking', 'Vérification…', '🔄');
+    if (showModalResult) showUpdateState('checking');
+
     const result = await window.electronAPI.checkUpdate();
 
     if (!result.available) {
       setUpdateBtn('uptodate', 'À jour', '✅');
-      // Remettre l'icône neutre après 5s
-      setTimeout(() => setUpdateBtn('checking', 'Mise à jour', '🔄'), 5000);
+      setTimeout(() => setUpdateBtn('checking', 'Mise à jour', '🔄'), 4000);
+      if (showModalResult) {
+        const cur = result.current || result.remoteVersion || '–';
+        document.getElementById('updateCurrentVersion').textContent = 'Version installée : v' + cur;
+        showUpdateState('uptodate');
+      }
       return;
     }
 
     _pendingVersion = result.version;
     document.getElementById('updateVersionBadge').textContent = 'v' + result.version;
+    document.getElementById('updateVersionCompare').textContent =
+      'Installée : v' + result.current + '  →  Nouvelle : v' + result.version;
 
     if (result.ready) {
       showUpdateState('ready');
@@ -1800,6 +1821,17 @@ async function checkForUpdates() {
     }
   } catch {
     setUpdateBtn('checking', 'Mise à jour', '🔄');
+    if (showModalResult) showUpdateState('error');
+  }
+}
+
+function openUpdateModal() {
+  openModal('updateModal');
+  // Toujours re-vérifier à l'ouverture du modal (sauf si téléchargement en cours)
+  const isDownloading = document.getElementById('updateStateDownloading').style.display === 'block';
+  const isReady = document.getElementById('updateStateReady').style.display === 'block';
+  if (!isDownloading && !isReady) {
+    checkForUpdates(true);
   }
 }
 
@@ -1823,9 +1855,9 @@ function dismissUpdateBanner() {
 }
 
 function showUpdateState(state) {
-  ['idle', 'downloading', 'ready', 'error'].forEach(s => {
-    document.getElementById('updateState' + s.charAt(0).toUpperCase() + s.slice(1)).style.display =
-      s === state ? 'block' : 'none';
+  ['checking', 'uptodate', 'idle', 'downloading', 'ready', 'error'].forEach(s => {
+    const el = document.getElementById('updateState' + s.charAt(0).toUpperCase() + s.slice(1));
+    if (el) el.style.display = s === state ? 'block' : 'none';
   });
 }
 
@@ -1834,6 +1866,8 @@ async function startUpdate() {
   showUpdateState('downloading');
   setUpdateBtn('downloading', '0%', '⬇️');
   document.getElementById('updateModalClose').style.display = 'none';
+  document.getElementById('updateProgressFill').style.width = '0%';
+  document.getElementById('updateProgressLabel').textContent = 'Connexion…';
   await window.electronAPI.startDownload();
 }
 
