@@ -426,7 +426,7 @@
 
   /* AUTH PAGE */
   .auth-page { display:flex; align-items:center; justify-content:center; min-height:100vh; width:100%; background:var(--bg); }
-  .auth-card { background:var(--card); border:1px solid var(--border); border-radius:24px; padding:36px; width:420px; }
+  .auth-card { background:var(--card); border:1px solid var(--border); border-radius:24px; padding:36px; width:420px; box-shadow:0 24px 64px rgba(0,0,0,.6); }
   .auth-logo { text-align:center; margin-bottom:6px; }
   .auth-logo img { height:60px; object-fit:contain; }
   .auth-tagline { text-align:center; color:var(--text2); font-size:13px; margin-bottom:28px; }
@@ -436,6 +436,260 @@
   .auth-divider { text-align:center; color:var(--text3); font-size:12px; margin:16px 0; }
   .platform-auth-btn { display:flex; align-items:center; gap:10px; width:100%; padding:11px 16px; background:var(--bg2); border:1px solid var(--border); border-radius:10px; cursor:pointer; font-size:13px; font-weight:500; color:var(--text); transition:border-color .2s; margin-bottom:8px; }
   .platform-auth-btn:hover { border-color:var(--primary); }
+</style>
+
+<!-- ═══ AMÉLIORATIONS UI v1.0.4 ═══ -->
+<style>
+  /* ── Variables étendues ── */
+  :root {
+    --shadow-sm: 0 2px 8px rgba(0,0,0,.35);
+    --shadow-md: 0 4px 20px rgba(0,0,0,.45);
+    --shadow-lg: 0 12px 40px rgba(0,0,0,.55);
+    --shadow-glow: 0 0 24px var(--primary-glow);
+    --radius-xl: 20px;
+    --transition: all .22s cubic-bezier(.4,0,.2,1);
+  }
+
+  /* ── Cards avec profondeur ── */
+  .card {
+    box-shadow: var(--shadow-sm);
+    transition: var(--transition);
+  }
+  .card:hover { box-shadow: var(--shadow-md); }
+  .stat-card { box-shadow: var(--shadow-sm); transition: var(--transition); overflow: hidden; position: relative; padding-top: 16px; }
+  .stat-card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+    border-radius: 16px 16px 0 0;
+  }
+  .stat-card.stat-purple::before { background: var(--primary); }
+  .stat-card.stat-blue::before   { background: var(--blue); }
+  .stat-card.stat-green::before  { background: var(--accent); }
+  .stat-card.stat-yellow::before { background: var(--yellow); }
+  .stat-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+
+  .stat-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .stat-icon {
+    width: 36px; height: 36px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center; font-size: 17px;
+  }
+  .stat-icon.purple { background: var(--primary-dim); }
+  .stat-icon.blue   { background: rgba(78,205,196,.15); }
+  .stat-icon.green  { background: var(--accent-dim); }
+  .stat-icon.yellow { background: rgba(255,209,102,.15); }
+
+  /* ── Hero next-stream card ── */
+  .next-stream-card {
+    background: linear-gradient(135deg, rgba(155,92,246,.18) 0%, rgba(78,205,196,.08) 100%);
+    border: 1px solid rgba(155,92,246,.5);
+    box-shadow: 0 0 0 1px rgba(155,92,246,.1), var(--shadow-md), inset 0 1px 0 rgba(255,255,255,.04);
+    position: relative; overflow: hidden;
+  }
+  .next-stream-card::after {
+    content: ''; position: absolute; bottom: -60px; right: -60px;
+    width: 200px; height: 200px;
+    background: radial-gradient(circle, rgba(46,232,155,.12) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .stream-countdown {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: rgba(155,92,246,.2); border: 1px solid rgba(155,92,246,.3);
+    border-radius: 20px; padding: 4px 12px; font-size: 11px;
+    margin-bottom: 12px;
+  }
+  .stream-title-big { font-size: 22px; }
+
+  /* ── Quick action cards ── */
+  .quick-action {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 22px 18px;
+    text-align: center;
+    cursor: pointer;
+    transition: var(--transition);
+    box-shadow: var(--shadow-sm);
+    position: relative; overflow: hidden;
+  }
+  .quick-action::before {
+    content: ''; position: absolute; inset: 0; opacity: 0;
+    background: linear-gradient(135deg, var(--primary-dim), transparent);
+    transition: opacity .22s;
+  }
+  .quick-action:hover::before { opacity: 1; }
+  .quick-action:hover {
+    border-color: var(--primary);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 28px rgba(155,92,246,.2);
+  }
+  .qa-icon-wrap {
+    width: 48px; height: 48px; border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px; margin: 0 auto 12px;
+    background: var(--primary-dim); border: 1px solid rgba(155,92,246,.2);
+    transition: var(--transition);
+  }
+  .quick-action:hover .qa-icon-wrap {
+    background: rgba(155,92,246,.3);
+    transform: scale(1.08);
+  }
+  .qa-icon-wrap.green  { background: var(--accent-dim); border-color: rgba(46,232,155,.2); }
+  .qa-icon-wrap.yellow { background: rgba(255,209,102,.15); border-color: rgba(255,209,102,.2); }
+  .quick-action:hover .qa-icon-wrap.green  { background: rgba(46,232,155,.3); }
+  .quick-action:hover .qa-icon-wrap.yellow { background: rgba(255,209,102,.3); }
+  .qa-label { font-size: 13px; font-weight: 600; color: var(--text2); transition: color .2s; }
+  .quick-action:hover .qa-label { color: var(--text); }
+
+  /* ── Activity items ── */
+  .activity-item {
+    border-radius: 14px;
+    transition: var(--transition);
+  }
+  .activity-item:hover { border-color: var(--border); background: var(--card); transform: translateX(2px); }
+
+  /* ── Stream rows in agenda ── */
+  .stream-row {
+    transition: var(--transition);
+    border-left: 3px solid var(--primary);
+    box-shadow: var(--shadow-sm);
+  }
+  .stream-row:hover { transform: translateX(3px); box-shadow: var(--shadow-md); border-left-color: var(--accent); }
+
+  /* ── Calendar ── */
+  .cal-day {
+    min-height: 88px;
+    transition: var(--transition);
+    box-shadow: var(--shadow-sm);
+  }
+  .cal-day:hover { border-color: var(--primary); transform: scale(1.02); box-shadow: var(--shadow-md); }
+  .cal-day.today {
+    border-color: var(--primary);
+    background: rgba(155,92,246,.12);
+    box-shadow: 0 0 0 2px var(--primary-glow), var(--shadow-sm);
+  }
+  .cal-day-num { font-size: 14px; font-weight: 600; }
+  .cal-event {
+    font-size: 10px; font-weight: 600;
+    border-radius: 5px;
+    padding: 3px 6px;
+    border-left: 2px solid var(--primary);
+  }
+  .cal-event.green { border-left-color: var(--accent); }
+  .cal-header { font-size: 12px; color: var(--text3); font-weight: 600; padding: 10px 0; }
+
+  /* ── Timer ── */
+  .timer-display { font-size: 68px; }
+  .timer-btn {
+    width: 60px; height: 60px;
+    box-shadow: var(--shadow-md);
+    transition: var(--transition);
+  }
+  .timer-btn.start:hover { transform: scale(1.1); box-shadow: 0 0 30px rgba(46,232,155,.5); }
+  .dur-btn { border-radius: 24px; transition: var(--transition); font-size: 12px; font-weight: 600; }
+  .dur-btn.active { box-shadow: 0 0 12px var(--primary-glow); }
+  .t-stat { transition: var(--transition); }
+  .t-stat:hover { border-color: var(--primary); background: var(--primary-dim); }
+
+  /* ── Buttons ── */
+  .btn-primary { box-shadow: 0 2px 12px rgba(155,92,246,.3); }
+  .btn-primary:hover { box-shadow: 0 4px 24px rgba(155,92,246,.5); }
+  .btn-danger:hover { background: var(--danger); color: #fff; }
+  .btn { transition: var(--transition); }
+
+  /* ── Inputs avec focus glow ── */
+  .form-input:focus, .form-select:focus, .form-textarea:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px var(--primary-dim);
+  }
+
+  /* ── Sidebar améliorée ── */
+  .nav-item {
+    border-radius: 14px;
+    transition: var(--transition);
+  }
+  .nav-item:hover { background: rgba(155,92,246,.12); }
+  .nav-item.active {
+    background: rgba(155,92,246,.18);
+    box-shadow: inset 0 0 0 1px rgba(155,92,246,.2);
+  }
+  .sidebar { box-shadow: 2px 0 20px rgba(0,0,0,.3); }
+
+  /* Tooltip sur la sidebar collapsée */
+  .nav-item[title]:not(.sidebar.expanded .nav-item) { position: relative; }
+  .sidebar:not(.expanded) .nav-item:hover::after {
+    content: attr(title);
+    position: absolute; left: 56px; top: 50%; transform: translateY(-50%);
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 8px; padding: 6px 12px;
+    font-size: 12px; font-weight: 500; color: var(--text);
+    white-space: nowrap; z-index: 999;
+    box-shadow: var(--shadow-md);
+    pointer-events: none;
+  }
+
+  /* ── Topbar améliorée ── */
+  .topbar {
+    background: rgba(13,15,20,.95);
+    backdrop-filter: blur(20px);
+    box-shadow: 0 1px 0 var(--border), 0 4px 16px rgba(0,0,0,.2);
+  }
+  .topbar-title {
+    font-size: 17px; letter-spacing: -.2px;
+  }
+
+  /* ── Modal améliorée ── */
+  .modal {
+    box-shadow: var(--shadow-lg), 0 0 0 1px rgba(155,92,246,.1);
+  }
+
+  /* ── Notifications ── */
+  .notif-item {
+    backdrop-filter: blur(12px);
+    box-shadow: var(--shadow-lg);
+  }
+  .notif-item.success { background: rgba(26,29,38,.95); }
+  .notif-item.warning { border-color: var(--yellow); }
+
+  /* ── Scrollbar plus fine et jolie ── */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-thumb { background: rgba(155,92,246,.3); border-radius: 4px; }
+  ::-webkit-scrollbar-thumb:hover { background: rgba(155,92,246,.6); }
+
+  /* ── Page header ── */
+  .page-header { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; padding-bottom: 20px; border-bottom: 1px solid var(--border); }
+  .page-header-icon { width: 44px; height: 44px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 20px; background: var(--primary-dim); border: 1px solid rgba(155,92,246,.2); }
+  .page-header-text h2 { font-family: 'Space Grotesk', sans-serif; font-size: 20px; font-weight: 700; }
+  .page-header-text p { font-size: 13px; color: var(--text2); margin-top: 2px; }
+
+  /* ── History table amélioration ── */
+  .history-table tr:hover td { background: rgba(155,92,246,.05); }
+  .history-table td:first-child { font-weight: 600; color: var(--text2); }
+
+  /* ── Live indicator ── */
+  .live-dot { animation: pulse-live 1.2s ease-in-out infinite; }
+  @keyframes pulse-live { 0%,100%{box-shadow:0 0 0 0 rgba(255,77,106,.5)} 50%{box-shadow:0 0 0 6px rgba(255,77,106,0)} }
+
+  /* ── Avatar ── */
+  .avatar { box-shadow: 0 0 0 2px rgba(155,92,246,.3), var(--shadow-sm); transition: var(--transition); }
+  .avatar:hover { box-shadow: 0 0 0 2px var(--primary), var(--shadow-md); }
+
+  /* ── Idées ── */
+  .idea-generator {
+    background: linear-gradient(135deg, rgba(155,92,246,.12), rgba(78,205,196,.06));
+    border: 1px solid rgba(155,92,246,.2);
+    box-shadow: var(--shadow-sm);
+  }
+  .idea-card {
+    box-shadow: var(--shadow-sm);
+    transition: var(--transition);
+  }
+  .idea-card:hover { box-shadow: var(--shadow-md); transform: translateY(-3px); }
+
+  /* ── Upload zone ── */
+  .upload-zone { box-shadow: var(--shadow-sm); transition: var(--transition); }
+  .upload-zone:hover { box-shadow: var(--shadow-md); }
+
+  /* ── Settings ── */
+  .settings-section { box-shadow: var(--shadow-sm); transition: var(--transition); }
 </style>
 </head>
 <body>
@@ -655,23 +909,35 @@
       </div>
 
       <div class="grid-4" style="margin-bottom:24px;">
-        <div class="stat-card">
-          <div class="stat-label">Sessions streamées</div>
+        <div class="stat-card stat-purple">
+          <div class="stat-header">
+            <div class="stat-label">Sessions streamées</div>
+            <div class="stat-icon purple">🎮</div>
+          </div>
           <div class="stat-value" id="statStreams" style="color:var(--primary)">0</div>
-          <div class="stat-sub"><span class="stat-trend" id="statStreamsSub">Total enregistré</span></div>
+          <div class="stat-sub"><span class="stat-trend">Total enregistré</span></div>
         </div>
-        <div class="stat-card">
-          <div class="stat-label">Temps streamé</div>
+        <div class="stat-card stat-blue">
+          <div class="stat-header">
+            <div class="stat-label">Temps streamé</div>
+            <div class="stat-icon blue">⏱️</div>
+          </div>
           <div class="stat-value" id="statTime" style="color:var(--blue)">0h00</div>
-          <div class="stat-sub"><span class="stat-trend" id="statTimeSub">Toutes sessions</span></div>
+          <div class="stat-sub"><span style="color:var(--text2); font-size:12px;">Toutes sessions</span></div>
         </div>
-        <div class="stat-card">
-          <div class="stat-label">Streams planifiés</div>
+        <div class="stat-card stat-green">
+          <div class="stat-header">
+            <div class="stat-label">Streams planifiés</div>
+            <div class="stat-icon green">📅</div>
+          </div>
           <div class="stat-value" id="statPlanned" style="color:var(--accent)">0</div>
-          <div class="stat-sub"><span style="color:var(--text2); font-size:12px;" id="statPlannedSub">À venir</span></div>
+          <div class="stat-sub"><span style="color:var(--text2); font-size:12px;">À venir</span></div>
         </div>
-        <div class="stat-card">
-          <div class="stat-label">Idées sauvegardées</div>
+        <div class="stat-card stat-yellow">
+          <div class="stat-header">
+            <div class="stat-label">Idées sauvegardées</div>
+            <div class="stat-icon yellow">💡</div>
+          </div>
           <div class="stat-value" id="statIdeas" style="color:var(--yellow)">0</div>
           <div class="stat-sub"><span style="color:var(--text2); font-size:12px;">Dans la collection</span></div>
         </div>
@@ -679,15 +945,15 @@
 
       <div class="quick-actions">
         <div class="quick-action" onclick="openStreamModal(null)">
-          <div class="qa-icon">📅</div>
+          <div class="qa-icon-wrap">📅</div>
           <div class="qa-label">Créer un stream</div>
         </div>
         <div class="quick-action" onclick="navigate('ideas',null)">
-          <div class="qa-icon">💡</div>
+          <div class="qa-icon-wrap green">💡</div>
           <div class="qa-label">Ajouter une idée</div>
         </div>
         <div class="quick-action" onclick="navigate('videos',null)">
-          <div class="qa-icon">🎬</div>
+          <div class="qa-icon-wrap yellow">🎬</div>
           <div class="qa-label">Importer une vidéo</div>
         </div>
       </div>
