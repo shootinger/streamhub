@@ -1,0 +1,1822 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StreamHub — Votre studio de contenu</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  /* TITLEBAR */
+  .titlebar {
+    position: fixed; top: 0; left: 0; right: 0; height: 38px; z-index: 9999;
+    background: var(--bg2); border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+    -webkit-app-region: drag; user-select: none;
+  }
+  .titlebar-left { display: flex; align-items: center; gap: 8px; padding-left: 14px; font-family: 'Space Grotesk', sans-serif; font-size: 13px; font-weight: 600; color: var(--primary); }
+  .titlebar-left span { color: var(--text); font-weight: 400; font-size: 12px; opacity: .6; }
+  .titlebar-controls { display: flex; -webkit-app-region: no-drag; }
+  .tb-btn { width: 46px; height: 38px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: background .15s; font-size: 13px; color: var(--text2); border: none; background: transparent; }
+  .tb-btn:hover { background: rgba(255,255,255,.08); color: var(--text); }
+  .tb-btn.close:hover { background: #e81123; color: #fff; }
+  /* Décaler le contenu pour la titlebar */
+  body { padding-top: 38px; }
+  .sidebar { top: 38px !important; }
+  .main { max-height: calc(100vh - 38px) !important; }
+  .topbar { top: 38px !important; }
+
+  /* BANNIÈRE MISE À JOUR */
+  .update-banner {
+    display: none; position: fixed; top: 38px; left: 0; right: 0; z-index: 800;
+    background: linear-gradient(90deg, rgba(155,92,246,.25), rgba(46,232,155,.15));
+    border-bottom: 1px solid var(--primary); padding: 10px 20px;
+    align-items: center; justify-content: space-between; gap: 12px;
+  }
+  .update-banner.visible { display: flex; }
+  .update-banner-left { display: flex; align-items: center; gap: 10px; font-size: 13px; }
+  .update-banner-left strong { color: var(--primary); }
+  .update-banner-actions { display: flex; gap: 8px; flex-shrink: 0; -webkit-app-region: no-drag; }
+
+  /* MODAL MISE À JOUR */
+  .update-modal-body { text-align: center; padding: 10px 0; }
+  .update-version-badge {
+    display: inline-block; font-family: 'Space Grotesk', sans-serif; font-size: 28px; font-weight: 700;
+    color: var(--primary); background: var(--primary-dim); border: 1px solid var(--primary);
+    border-radius: 12px; padding: 8px 24px; margin: 12px 0;
+  }
+  .update-progress-wrap { margin: 20px 0; }
+  .update-progress-bar { height: 8px; background: var(--border); border-radius: 4px; overflow: hidden; margin-bottom: 8px; }
+  .update-progress-fill { height: 100%; background: linear-gradient(90deg, var(--primary), var(--accent)); border-radius: 4px; transition: width .4s; width: 0%; }
+  .update-progress-label { font-size: 13px; color: var(--text2); }
+  .version-tag { font-size: 11px; color: var(--text3); margin-left: 6px; }
+</style>
+<style>
+  :root {
+    --bg: #0D0F14;
+    --bg2: #13161F;
+    --card: #1A1D26;
+    --card2: #20243A;
+    --border: #2A2E3D;
+    --primary: #9B5CF6;
+    --primary-dim: rgba(155,92,246,0.15);
+    --primary-glow: rgba(155,92,246,0.4);
+    --accent: #2EE89B;
+    --accent-dim: rgba(46,232,155,0.12);
+    --danger: #FF4D6A;
+    --danger-dim: rgba(255,77,106,0.15);
+    --text: #E8E3FF;
+    --text2: #8B8FA8;
+    --text3: #4A4E62;
+    --yellow: #FFD166;
+    --blue: #4ECDC4;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'Inter',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; display:flex; overflow:hidden; }
+
+  /* SIDEBAR */
+  .sidebar {
+    width:72px; min-height:100vh; background:var(--bg2); border-right:1px solid var(--border);
+    display:flex; flex-direction:column; align-items:center; padding:20px 0; gap:6px;
+    position:fixed; left:0; top:0; bottom:0; z-index:100; transition:width .25s ease;
+  }
+  .sidebar.expanded { width:220px; align-items:flex-start; padding:20px 12px; }
+  .sidebar-logo {
+    font-family:'Space Grotesk',sans-serif; font-size:22px; font-weight:700;
+    color:var(--primary); letter-spacing:-0.5px; margin-bottom:20px; padding:0 4px;
+    white-space:nowrap; overflow:hidden;
+  }
+  .sidebar-logo span { color:var(--text); }
+  .nav-item {
+    width:48px; height:48px; border-radius:12px; display:flex; align-items:center; justify-content:center;
+    cursor:pointer; transition:all .2s; position:relative; flex-shrink:0; color:var(--text2);
+  }
+  .sidebar.expanded .nav-item { width:100%; padding:0 12px; gap:12px; justify-content:flex-start; }
+  .nav-item:hover { background:var(--primary-dim); color:var(--primary); }
+  .nav-item.active { background:var(--primary-dim); color:var(--primary); }
+  .nav-item.active::before {
+    content:''; position:absolute; left:0; top:50%; transform:translateY(-50%);
+    width:3px; height:24px; background:var(--primary); border-radius:0 3px 3px 0;
+  }
+  .sidebar.expanded .nav-item.active::before { display:none; }
+  .nav-label { font-size:13px; font-weight:500; white-space:nowrap; overflow:hidden; opacity:0; transition:opacity .2s; }
+  .sidebar.expanded .nav-label { opacity:1; }
+  .nav-icon { font-size:20px; flex-shrink:0; }
+  .sidebar-toggle {
+    margin-top:auto; width:48px; height:40px; border-radius:10px; background:var(--card);
+    display:flex; align-items:center; justify-content:center; cursor:pointer; color:var(--text2);
+    border:1px solid var(--border); transition:all .2s; flex-shrink:0;
+  }
+  .sidebar.expanded .sidebar-toggle { width:100%; }
+  .sidebar-toggle:hover { color:var(--text); border-color:var(--primary); }
+
+  /* MAIN */
+  .main { margin-left:72px; flex:1; overflow-y:auto; max-height:100vh; transition:margin-left .25s; }
+  .main.expanded { margin-left:220px; }
+
+  /* TOPBAR */
+  .topbar {
+    position:sticky; top:0; z-index:50; background:rgba(13,15,20,0.9); backdrop-filter:blur(12px);
+    border-bottom:1px solid var(--border); padding:0 28px; height:64px;
+    display:flex; align-items:center; justify-content:space-between;
+  }
+  .topbar-title { font-family:'Space Grotesk',sans-serif; font-size:18px; font-weight:600; }
+  .topbar-right { display:flex; align-items:center; gap:12px; }
+  .status-live {
+    display:flex; align-items:center; gap:8px; background:var(--danger-dim);
+    border:1px solid var(--danger); border-radius:20px; padding:6px 14px; font-size:13px; font-weight:500; color:var(--danger);
+  }
+  .live-dot { width:8px; height:8px; border-radius:50%; background:var(--danger); animation:pulse 1.5s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(1.3)} }
+  .avatar { width:36px; height:36px; border-radius:10px; background:linear-gradient(135deg,var(--primary),#6B3FCA); display:flex; align-items:center; justify-content:center; font-weight:600; font-size:14px; cursor:pointer; }
+
+  /* CONTENT */
+  .content { padding:28px; }
+  .page { display:none; }
+  .page.active { display:block; }
+
+  /* CARDS */
+  .card { background:var(--card); border:1px solid var(--border); border-radius:16px; padding:20px; }
+  .card-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; }
+  .card-title { font-family:'Space Grotesk',sans-serif; font-size:15px; font-weight:600; }
+  .card-badge { font-size:11px; padding:3px 10px; border-radius:20px; font-weight:600; }
+  .badge-purple { background:var(--primary-dim); color:var(--primary); }
+  .badge-green { background:var(--accent-dim); color:var(--accent); }
+  .badge-red { background:var(--danger-dim); color:var(--danger); }
+  .badge-yellow { background:rgba(255,209,102,.15); color:var(--yellow); }
+
+  /* GRID */
+  .grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  .grid-3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px; }
+  .grid-4 { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; }
+
+  /* STATS */
+  .stat-card { background:var(--card); border:1px solid var(--border); border-radius:16px; padding:20px; }
+  .stat-label { font-size:12px; color:var(--text2); font-weight:500; text-transform:uppercase; letter-spacing:.5px; margin-bottom:8px; }
+  .stat-value { font-family:'Space Grotesk',sans-serif; font-size:28px; font-weight:700; }
+  .stat-sub { font-size:12px; color:var(--text2); margin-top:4px; }
+  .stat-trend { font-size:12px; color:var(--accent); font-weight:500; }
+
+  /* BTN */
+  .btn { display:inline-flex; align-items:center; gap:8px; padding:9px 18px; border-radius:10px; font-size:13px; font-weight:500; cursor:pointer; border:none; transition:all .2s; font-family:'Inter',sans-serif; }
+  .btn-primary { background:var(--primary); color:#fff; }
+  .btn-primary:hover { background:#8A4EE0; transform:translateY(-1px); box-shadow:0 4px 20px var(--primary-glow); }
+  .btn-outline { background:transparent; color:var(--text2); border:1px solid var(--border); }
+  .btn-outline:hover { border-color:var(--primary); color:var(--primary); }
+  .btn-ghost { background:transparent; color:var(--text2); }
+  .btn-ghost:hover { color:var(--text); background:var(--card); }
+  .btn-danger { background:var(--danger-dim); color:var(--danger); border:1px solid var(--danger); }
+  .btn-sm { padding:6px 12px; font-size:12px; border-radius:8px; }
+  .btn-green { background:var(--accent-dim); color:var(--accent); border:1px solid var(--accent); }
+
+  /* INPUTS */
+  .form-group { margin-bottom:16px; }
+  .form-label { display:block; font-size:12px; font-weight:500; color:var(--text2); margin-bottom:6px; text-transform:uppercase; letter-spacing:.4px; }
+  .form-input, .form-select, .form-textarea {
+    width:100%; background:var(--bg2); border:1px solid var(--border); border-radius:10px;
+    padding:10px 14px; color:var(--text); font-size:14px; font-family:'Inter',sans-serif;
+    transition:border-color .2s; outline:none;
+  }
+  .form-input:focus, .form-select:focus, .form-textarea:focus { border-color:var(--primary); }
+  .form-textarea { resize:vertical; min-height:90px; }
+  .form-select option { background:var(--card); }
+
+  /* SECTION TITLE */
+  .section-title { font-family:'Space Grotesk',sans-serif; font-size:22px; font-weight:700; margin-bottom:6px; }
+  .section-sub { font-size:14px; color:var(--text2); margin-bottom:24px; }
+  .divider { border:none; border-top:1px solid var(--border); margin:24px 0; }
+
+  /* ======= DASHBOARD ======= */
+  .next-stream-card {
+    background:linear-gradient(135deg,rgba(155,92,246,.2),rgba(78,205,196,.1));
+    border:1px solid var(--primary); border-radius:20px; padding:24px; margin-bottom:24px;
+    position:relative; overflow:hidden;
+  }
+  .next-stream-card::before {
+    content:''; position:absolute; top:-40px; right:-40px; width:150px; height:150px;
+    background:radial-gradient(circle,var(--primary-glow) 0%,transparent 70%);
+    pointer-events:none;
+  }
+  .stream-countdown { font-family:'Space Grotesk',sans-serif; font-size:13px; color:var(--primary); font-weight:600; margin-bottom:8px; text-transform:uppercase; letter-spacing:1px; }
+  .stream-title-big { font-family:'Space Grotesk',sans-serif; font-size:24px; font-weight:700; margin-bottom:4px; }
+  .stream-meta { font-size:13px; color:var(--text2); display:flex; gap:16px; }
+  .stream-meta span { display:flex; align-items:center; gap:5px; }
+
+  .quick-actions { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:24px; }
+  .quick-action {
+    background:var(--card); border:1px solid var(--border); border-radius:14px; padding:18px;
+    cursor:pointer; transition:all .2s; text-align:center;
+  }
+  .quick-action:hover { border-color:var(--primary); background:var(--primary-dim); transform:translateY(-2px); }
+  .quick-action .qa-icon { font-size:24px; margin-bottom:8px; }
+  .quick-action .qa-label { font-size:13px; font-weight:500; color:var(--text2); }
+  .quick-action:hover .qa-label { color:var(--primary); }
+
+  .activity-list { display:flex; flex-direction:column; gap:10px; }
+  .activity-item {
+    display:flex; align-items:center; gap:14px; padding:14px;
+    background:var(--bg2); border-radius:12px; border:1px solid var(--border);
+  }
+  .activity-icon { width:38px; height:38px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:17px; flex-shrink:0; }
+  .activity-info { flex:1; }
+  .activity-name { font-size:14px; font-weight:500; }
+  .activity-date { font-size:12px; color:var(--text2); }
+  .activity-status { font-size:12px; font-weight:600; }
+
+  /* ======= AGENDA ======= */
+  .calendar-nav { display:flex; align-items:center; gap:12px; margin-bottom:20px; }
+  .calendar-nav h3 { font-family:'Space Grotesk',sans-serif; font-size:18px; font-weight:600; flex:1; }
+  .calendar-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:6px; }
+  .cal-header { text-align:center; font-size:11px; font-weight:600; color:var(--text2); padding:8px 0; text-transform:uppercase; letter-spacing:.5px; }
+  .cal-day {
+    min-height:80px; background:var(--bg2); border:1px solid var(--border); border-radius:10px;
+    padding:8px; cursor:pointer; transition:all .2s; position:relative;
+  }
+  .cal-day:hover { border-color:var(--primary); }
+  .cal-day.today { border-color:var(--primary); background:var(--primary-dim); }
+  .cal-day.has-stream { border-color:var(--accent); }
+  .cal-day-num { font-size:13px; font-weight:500; margin-bottom:4px; }
+  .cal-day.today .cal-day-num { color:var(--primary); font-weight:700; }
+  .cal-event { font-size:10px; background:var(--primary-dim); color:var(--primary); border-radius:4px; padding:2px 5px; margin-top:3px; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .cal-event.green { background:var(--accent-dim); color:var(--accent); }
+  .stream-list-agenda { display:flex; flex-direction:column; gap:10px; margin-top:20px; }
+  .stream-row {
+    display:flex; align-items:center; gap:14px; background:var(--bg2);
+    border:1px solid var(--border); border-radius:12px; padding:14px 18px;
+  }
+  .stream-row-date { text-align:center; min-width:50px; }
+  .stream-row-date .sr-day { font-family:'Space Grotesk',sans-serif; font-size:20px; font-weight:700; color:var(--primary); }
+  .stream-row-date .sr-month { font-size:11px; color:var(--text2); text-transform:uppercase; }
+  .stream-row-info { flex:1; }
+  .stream-row-info .sr-title { font-size:14px; font-weight:500; }
+  .stream-row-info .sr-meta { font-size:12px; color:var(--text2); display:flex; gap:10px; margin-top:3px; }
+  .stream-row-actions { display:flex; gap:8px; }
+
+  /* ======= HORODATEUR ======= */
+  .timer-center { text-align:center; padding:30px 0; }
+  .timer-display {
+    font-family:'Space Grotesk',sans-serif; font-size:72px; font-weight:700;
+    letter-spacing:-2px; line-height:1;
+    background:linear-gradient(135deg,var(--primary),var(--blue));
+    -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+  }
+  .timer-label { font-size:13px; color:var(--text2); margin-top:8px; text-transform:uppercase; letter-spacing:1px; }
+  .timer-progress-bar { height:6px; background:var(--border); border-radius:3px; overflow:hidden; margin:20px 0; }
+  .timer-progress-fill { height:100%; background:linear-gradient(90deg,var(--primary),var(--blue)); border-radius:3px; transition:width .5s; }
+  .timer-controls { display:flex; justify-content:center; gap:12px; margin-top:20px; }
+  .timer-btn {
+    width:56px; height:56px; border-radius:50%; border:none; cursor:pointer; font-size:22px;
+    display:flex; align-items:center; justify-content:center; transition:all .2s;
+  }
+  .timer-btn.start { background:var(--accent); }
+  .timer-btn.start:hover { transform:scale(1.08); box-shadow:0 0 20px rgba(46,232,155,.4); }
+  .timer-btn.stop { background:var(--danger-dim); color:var(--danger); border:1px solid var(--danger); }
+  .timer-btn.pause { background:var(--primary-dim); color:var(--primary); border:1px solid var(--primary); }
+  .duration-selector { display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin-bottom:24px; }
+  .dur-btn {
+    padding:8px 16px; border-radius:20px; font-size:13px; font-weight:500; cursor:pointer;
+    background:var(--bg2); border:1px solid var(--border); color:var(--text2); transition:all .2s;
+  }
+  .dur-btn:hover, .dur-btn.active { background:var(--primary-dim); border-color:var(--primary); color:var(--primary); }
+  .timer-stats { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-top:24px; }
+  .t-stat { background:var(--bg2); border:1px solid var(--border); border-radius:12px; padding:16px; text-align:center; }
+  .t-stat-val { font-family:'Space Grotesk',sans-serif; font-size:20px; font-weight:700; }
+  .t-stat-lbl { font-size:11px; color:var(--text2); margin-top:4px; text-transform:uppercase; letter-spacing:.4px; }
+  .history-table { width:100%; border-collapse:collapse; font-size:13px; }
+  .history-table th { text-align:left; padding:10px 12px; color:var(--text2); font-weight:500; border-bottom:1px solid var(--border); font-size:11px; text-transform:uppercase; letter-spacing:.4px; }
+  .history-table td { padding:12px; border-bottom:1px solid var(--border); }
+  .history-table tr:last-child td { border-bottom:none; }
+  .history-table tr:hover td { background:var(--bg2); }
+
+  /* ======= PREPARATION ======= */
+  .prep-section { margin-bottom:24px; }
+  .prep-section-title { font-size:13px; font-weight:600; color:var(--primary); text-transform:uppercase; letter-spacing:.8px; margin-bottom:12px; display:flex; align-items:center; gap:8px; }
+  .checklist-item { display:flex; align-items:center; gap:10px; padding:10px; background:var(--bg2); border-radius:8px; margin-bottom:6px; border:1px solid var(--border); }
+  .checklist-item input[type=checkbox] { accent-color:var(--primary); width:16px; height:16px; cursor:pointer; }
+  .checklist-item label { font-size:13px; cursor:pointer; flex:1; }
+  .tag-cloud { display:flex; flex-wrap:wrap; gap:8px; }
+  .tag { padding:5px 12px; background:var(--bg2); border:1px solid var(--border); border-radius:20px; font-size:12px; color:var(--text2); cursor:pointer; transition:all .2s; }
+  .tag:hover, .tag.active { background:var(--primary-dim); border-color:var(--primary); color:var(--primary); }
+  .tag.green-tag { border-color:var(--accent); color:var(--accent); background:var(--accent-dim); }
+
+  /* ======= IDEES ======= */
+  .idea-generator { text-align:center; padding:24px; background:linear-gradient(135deg,rgba(155,92,246,.1),rgba(78,205,196,.05)); border-radius:16px; border:1px solid var(--border); margin-bottom:24px; }
+  .idea-generator h3 { font-family:'Space Grotesk',sans-serif; font-size:20px; margin-bottom:6px; }
+  .idea-generator p { color:var(--text2); font-size:14px; margin-bottom:20px; }
+  .idea-row { display:flex; gap:12px; justify-content:center; margin-bottom:16px; flex-wrap:wrap; }
+  .idea-cards { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .idea-card {
+    background:var(--bg2); border:1px solid var(--border); border-radius:12px; padding:16px;
+    cursor:pointer; transition:all .2s; position:relative;
+  }
+  .idea-card:hover { border-color:var(--primary); transform:translateY(-2px); }
+  .idea-card.saved { border-color:var(--accent); background:var(--accent-dim); }
+  .idea-card p { font-size:13px; line-height:1.5; }
+  .idea-card .idea-actions { display:flex; gap:6px; margin-top:10px; }
+  .idea-num { font-size:10px; color:var(--text3); margin-bottom:6px; font-weight:600; text-transform:uppercase; letter-spacing:.5px; }
+  .idea-category-badge { display:inline-block; font-size:10px; font-weight:600; padding:2px 8px; border-radius:10px; background:var(--primary-dim); color:var(--primary); margin-bottom:8px; }
+
+  /* ======= VIDEOS ======= */
+  .upload-zone {
+    border:2px dashed var(--border); border-radius:16px; padding:48px; text-align:center;
+    cursor:pointer; transition:all .2s; margin-bottom:24px; background:var(--bg2);
+  }
+  .upload-zone:hover { border-color:var(--primary); background:var(--primary-dim); }
+  .upload-zone .uz-icon { font-size:40px; margin-bottom:12px; }
+  .upload-zone h3 { font-family:'Space Grotesk',sans-serif; font-size:16px; margin-bottom:6px; }
+  .upload-zone p { font-size:13px; color:var(--text2); }
+  .format-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:24px; }
+  .format-card {
+    background:var(--bg2); border:1px solid var(--border); border-radius:12px; padding:16px; text-align:center; cursor:pointer; transition:all .2s;
+  }
+  .format-card:hover, .format-card.active { border-color:var(--primary); background:var(--primary-dim); }
+  .format-icon { font-size:28px; margin-bottom:8px; }
+  .format-name { font-size:13px; font-weight:600; }
+  .format-dim { font-size:11px; color:var(--text2); margin-top:3px; }
+  .video-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; }
+  .video-thumb {
+    background:var(--bg2); border:1px solid var(--border); border-radius:12px; overflow:hidden;
+    cursor:pointer; transition:all .2s;
+  }
+  .video-thumb:hover { border-color:var(--primary); transform:translateY(-2px); }
+  .vt-preview { height:140px; background:linear-gradient(135deg,var(--card2),var(--bg)); display:flex; align-items:center; justify-content:center; font-size:36px; position:relative; }
+  .vt-overlay { position:absolute; inset:0; background:rgba(0,0,0,.4); display:flex; align-items:center; justify-content:center; opacity:0; transition:opacity .2s; font-size:28px; }
+  .video-thumb:hover .vt-overlay { opacity:1; }
+  .vt-info { padding:12px; }
+  .vt-name { font-size:13px; font-weight:500; margin-bottom:4px; }
+  .vt-meta { font-size:11px; color:var(--text2); display:flex; justify-content:space-between; }
+
+  /* ======= IA ======= */
+  .ai-tool-card { background:var(--card); border:1px solid var(--border); border-radius:16px; padding:20px; margin-bottom:16px; }
+  .ai-tool-header { display:flex; align-items:center; gap:12px; margin-bottom:16px; }
+  .ai-tool-icon { width:40px; height:40px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:20px; }
+  .ai-result { background:var(--bg2); border:1px solid var(--border); border-radius:10px; padding:14px; font-size:13px; line-height:1.6; color:var(--text2); }
+  .ai-result strong { color:var(--text); font-weight:500; }
+  .platform-tabs { display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap; }
+  .platform-tab { padding:7px 16px; border-radius:8px; font-size:12px; font-weight:500; cursor:pointer; border:1px solid var(--border); background:transparent; color:var(--text2); transition:all .2s; }
+  .platform-tab.active { background:var(--primary); color:#fff; border-color:var(--primary); }
+  .platform-tab:hover:not(.active) { border-color:var(--primary); color:var(--primary); }
+
+  /* ======= SOUS-TITRES ======= */
+  .subtitle-preview {
+    background:#000; border-radius:12px; aspect-ratio:16/9; display:flex; align-items:flex-end; justify-content:center; padding:20px; position:relative; overflow:hidden; margin-bottom:16px;
+  }
+  .subtitle-text { background:rgba(0,0,0,.8); color:#fff; padding:8px 20px; border-radius:6px; font-size:18px; font-weight:500; text-align:center; }
+  .subtitle-controls { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+
+  /* ======= PARAMETRES ======= */
+  .settings-section { background:var(--card); border:1px solid var(--border); border-radius:16px; padding:24px; margin-bottom:16px; }
+  .settings-title { font-family:'Space Grotesk',sans-serif; font-size:15px; font-weight:600; margin-bottom:20px; display:flex; align-items:center; gap:8px; }
+  .profile-avatar-edit { position:relative; width:80px; height:80px; margin-bottom:20px; cursor:pointer; }
+  .profile-avatar-img { width:80px; height:80px; border-radius:16px; background:linear-gradient(135deg,var(--primary),#6B3FCA); display:flex; align-items:center; justify-content:center; font-size:28px; font-weight:700; }
+  .profile-avatar-edit-btn { position:absolute; bottom:-6px; right:-6px; width:26px; height:26px; background:var(--card); border:1px solid var(--border); border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:12px; }
+  .platform-select-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+  .platform-item { padding:12px; background:var(--bg2); border:1px solid var(--border); border-radius:10px; text-align:center; cursor:pointer; transition:all .2s; font-size:13px; }
+  .platform-item:hover, .platform-item.active { border-color:var(--primary); background:var(--primary-dim); color:var(--primary); }
+  .platform-item .pi-icon { font-size:20px; margin-bottom:5px; }
+
+  /* MODAL */
+  .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,.7); z-index:200; display:flex; align-items:center; justify-content:center; opacity:0; pointer-events:none; transition:opacity .2s; }
+  .modal-overlay.open { opacity:1; pointer-events:all; }
+  .modal { background:var(--card); border:1px solid var(--border); border-radius:20px; padding:28px; width:480px; max-width:90vw; max-height:85vh; overflow-y:auto; transform:scale(.95); transition:transform .2s; }
+  .modal-overlay.open .modal { transform:scale(1); }
+  .modal-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; }
+  .modal-title { font-family:'Space Grotesk',sans-serif; font-size:18px; font-weight:700; }
+  .modal-close { width:32px; height:32px; border-radius:8px; background:var(--bg2); border:1px solid var(--border); cursor:pointer; display:flex; align-items:center; justify-content:center; color:var(--text2); font-size:18px; }
+
+  /* NOTIFICATION */
+  .notif { position:fixed; bottom:24px; right:24px; z-index:300; }
+  .notif-item { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:14px 18px; margin-top:10px; display:flex; align-items:center; gap:10px; font-size:13px; box-shadow:0 8px 32px rgba(0,0,0,.5); animation:slideIn .3s ease; min-width:260px; }
+  .notif-item.success { border-color:var(--accent); }
+  .notif-item.info { border-color:var(--primary); }
+  @keyframes slideIn { from{transform:translateX(40px);opacity:0} to{transform:translateX(0);opacity:1} }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width:5px; }
+  ::-webkit-scrollbar-track { background:transparent; }
+  ::-webkit-scrollbar-thumb { background:var(--border); border-radius:3px; }
+
+  /* RESPONSIVE adjustments */
+  @media(max-width:900px) {
+    .grid-4 { grid-template-columns:1fr 1fr; }
+    .video-grid { grid-template-columns:1fr 1fr; }
+    .format-grid { grid-template-columns:1fr 1fr; }
+    .idea-cards { grid-template-columns:1fr; }
+  }
+
+  /* Loading spinner */
+  .spinner { display:inline-block; width:16px; height:16px; border:2px solid rgba(255,255,255,.3); border-top-color:#fff; border-radius:50%; animation:spin .6s linear infinite; }
+  @keyframes spin { to{transform:rotate(360deg)} }
+
+  /* EMPTY STATE */
+  .empty-state { text-align:center; padding:40px; }
+  .empty-state .es-icon { font-size:48px; margin-bottom:12px; opacity:.4; }
+  .empty-state p { color:var(--text2); font-size:14px; }
+
+  /* AUTH PAGE */
+  .auth-page { display:flex; align-items:center; justify-content:center; min-height:100vh; width:100%; background:var(--bg); }
+  .auth-card { background:var(--card); border:1px solid var(--border); border-radius:24px; padding:36px; width:420px; }
+  .auth-logo { font-family:'Space Grotesk',sans-serif; font-size:28px; font-weight:700; color:var(--primary); text-align:center; margin-bottom:6px; }
+  .auth-tagline { text-align:center; color:var(--text2); font-size:13px; margin-bottom:28px; }
+  .auth-tabs { display:flex; background:var(--bg2); border-radius:10px; padding:3px; margin-bottom:24px; }
+  .auth-tab { flex:1; text-align:center; padding:9px; border-radius:8px; cursor:pointer; font-size:13px; font-weight:500; transition:all .2s; color:var(--text2); }
+  .auth-tab.active { background:var(--primary); color:#fff; }
+  .auth-divider { text-align:center; color:var(--text3); font-size:12px; margin:16px 0; }
+  .platform-auth-btn { display:flex; align-items:center; gap:10px; width:100%; padding:11px 16px; background:var(--bg2); border:1px solid var(--border); border-radius:10px; cursor:pointer; font-size:13px; font-weight:500; color:var(--text); transition:border-color .2s; margin-bottom:8px; }
+  .platform-auth-btn:hover { border-color:var(--primary); }
+</style>
+</head>
+<body>
+
+<!-- CUSTOM TITLEBAR -->
+<div class="titlebar">
+  <div class="titlebar-left">StreamHub <span>— Votre studio de contenu</span><span id="appVersionTag" class="version-tag"></span></div>
+  <div class="titlebar-controls">
+    <button class="tb-btn" onclick="window.electronAPI?.minimize()" title="Réduire">&#x2013;</button>
+    <button class="tb-btn" id="maxBtn" onclick="toggleMax()" title="Agrandir">&#x25A1;</button>
+    <button class="tb-btn close" onclick="window.electronAPI?.close()" title="Fermer">&#x2715;</button>
+  </div>
+</div>
+
+<!-- BANNIÈRE MISE À JOUR -->
+<div class="update-banner" id="updateBanner">
+  <div class="update-banner-left">
+    <span>🚀</span>
+    <div>
+      <strong>Mise à jour disponible</strong>
+      <span id="updateBannerText" style="color:var(--text2); margin-left:6px;"></span>
+    </div>
+  </div>
+  <div class="update-banner-actions">
+    <button class="btn btn-outline btn-sm" onclick="dismissUpdateBanner()">Plus tard</button>
+    <button class="btn btn-primary btn-sm" onclick="openModal('updateModal')">⬇️ Mettre à jour</button>
+  </div>
+</div>
+
+<!-- MODAL MISE À JOUR -->
+<div class="modal-overlay" id="updateModal">
+  <div class="modal" style="width:460px;">
+    <div class="modal-header">
+      <div class="modal-title">🚀 Mise à jour StreamHub</div>
+      <div class="modal-close" id="updateModalClose" onclick="closeModal('updateModal')">✕</div>
+    </div>
+    <div class="update-modal-body">
+      <div style="color:var(--text2); font-size:13px; margin-bottom:4px;">Nouvelle version disponible</div>
+      <div class="update-version-badge" id="updateVersionBadge">v1.0.0</div>
+      <p style="font-size:13px; color:var(--text2); margin-bottom:20px;">
+        L'application sera redémarrée automatiquement après l'installation.
+      </p>
+
+      <!-- État : prêt à télécharger -->
+      <div id="updateStateIdle">
+        <button class="btn btn-primary" style="width:100%; justify-content:center; font-size:14px;" onclick="startUpdate()">
+          ⬇️ Télécharger et installer
+        </button>
+        <div style="margin-top:10px;">
+          <button class="btn btn-ghost btn-sm" onclick="openReleaseNotes()">📋 Voir les notes de version</button>
+        </div>
+      </div>
+
+      <!-- État : téléchargement en cours -->
+      <div id="updateStateDownloading" style="display:none;">
+        <div class="update-progress-wrap">
+          <div class="update-progress-bar">
+            <div class="update-progress-fill" id="updateProgressFill"></div>
+          </div>
+          <div class="update-progress-label" id="updateProgressLabel">Téléchargement… 0%</div>
+        </div>
+        <button class="btn btn-outline btn-sm" style="width:100%; justify-content:center;" disabled>⏳ Téléchargement en cours…</button>
+      </div>
+
+      <!-- État : prêt à installer -->
+      <div id="updateStateReady" style="display:none;">
+        <div style="background:var(--accent-dim); border:1px solid var(--accent); border-radius:10px; padding:12px; margin-bottom:16px; font-size:13px; color:var(--accent);">
+          ✅ Téléchargement terminé — prêt à installer
+        </div>
+        <button class="btn btn-primary" style="width:100%; justify-content:center; font-size:14px;" onclick="installAndRestart()">
+          🔄 Redémarrer et installer
+        </button>
+      </div>
+
+      <!-- État : erreur -->
+      <div id="updateStateError" style="display:none;">
+        <div style="background:var(--danger-dim); border:1px solid var(--danger); border-radius:10px; padding:12px; margin-bottom:16px; font-size:13px; color:var(--danger);" id="updateErrorMsg">
+          ❌ Erreur lors du téléchargement
+        </div>
+        <button class="btn btn-outline btn-sm" style="width:100%; justify-content:center;" onclick="startUpdate()">
+          🔁 Réessayer
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- AUTH PAGE -->
+<div id="authPage" class="auth-page">
+  <div class="auth-card">
+    <div class="auth-logo">StreamHub</div>
+    <div class="auth-tagline">Votre studio de contenu tout-en-un</div>
+    <div class="auth-tabs">
+      <div class="auth-tab active" onclick="switchAuthTab('login',this)">Connexion</div>
+      <div class="auth-tab" onclick="switchAuthTab('register',this)">Inscription</div>
+    </div>
+    <div id="loginForm">
+      <div class="form-group">
+        <label class="form-label">Adresse email</label>
+        <input class="form-input" type="email" placeholder="streamer@example.com">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Mot de passe</label>
+        <input class="form-input" type="password" placeholder="••••••••">
+      </div>
+      <button class="btn btn-primary" style="width:100%;justify-content:center;" onclick="loginUser()">Se connecter</button>
+      <div style="text-align:right;margin-top:10px;"><a href="#" style="font-size:12px;color:var(--primary);">Mot de passe oublié ?</a></div>
+      <div class="auth-divider">ou continuer avec</div>
+      <button class="platform-auth-btn"><span>💜</span> Continuer avec Twitch</button>
+      <button class="platform-auth-btn"><span>🔴</span> Continuer avec YouTube</button>
+    </div>
+    <div id="registerForm" style="display:none;">
+      <div class="form-group">
+        <label class="form-label">Pseudo</label>
+        <input class="form-input" type="text" placeholder="MonPseudo">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Email</label>
+        <input class="form-input" type="email" placeholder="email@example.com">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Mot de passe</label>
+        <input class="form-input" type="password" placeholder="••••••••">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Plateforme principale</label>
+        <select class="form-select">
+          <option>Twitch</option><option>YouTube</option><option>TikTok</option><option>Kick</option><option>Facebook Gaming</option>
+        </select>
+      </div>
+      <button class="btn btn-primary" style="width:100%;justify-content:center;" onclick="loginUser()">Créer mon compte</button>
+    </div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="appShell" style="display:none; width:100%;">
+
+<!-- SIDEBAR -->
+<nav class="sidebar" id="sidebar">
+  <div class="sidebar-logo" id="sidebarLogo">SH</div>
+  <div class="nav-item active" onclick="navigate('dashboard',this)" title="Dashboard">
+    <span class="nav-icon">⚡</span><span class="nav-label">Dashboard</span>
+  </div>
+  <div class="nav-item" onclick="navigate('agenda',this)" title="Agenda">
+    <span class="nav-icon">📅</span><span class="nav-label">Agenda</span>
+  </div>
+  <div class="nav-item" onclick="navigate('timer',this)" title="Horodateur">
+    <span class="nav-icon">⏱️</span><span class="nav-label">Horodateur</span>
+  </div>
+  <div class="nav-item" onclick="navigate('prep',this)" title="Préparation">
+    <span class="nav-icon">📋</span><span class="nav-label">Préparation</span>
+  </div>
+  <div class="nav-item" onclick="navigate('ideas',this)" title="Idées">
+    <span class="nav-icon">💡</span><span class="nav-label">Générateur d'idées</span>
+  </div>
+  <div class="nav-item" onclick="navigate('videos',this)" title="Vidéos">
+    <span class="nav-icon">🎬</span><span class="nav-label">Vidéos</span>
+  </div>
+  <div class="nav-item" onclick="navigate('subtitles',this)" title="Sous-titres">
+    <span class="nav-icon">💬</span><span class="nav-label">Sous-titres</span>
+  </div>
+  <div class="nav-item" onclick="navigate('library',this)" title="Bibliothèque">
+    <span class="nav-icon">🗂️</span><span class="nav-label">Bibliothèque</span>
+  </div>
+  <div class="nav-item" onclick="navigate('ai',this)" title="IA">
+    <span class="nav-icon">🤖</span><span class="nav-label">Intelligence IA</span>
+  </div>
+  <div class="nav-item" onclick="navigate('settings',this)" title="Paramètres">
+    <span class="nav-icon">⚙️</span><span class="nav-label">Paramètres</span>
+  </div>
+  <div class="sidebar-toggle" onclick="toggleSidebar()" title="Agrandir">
+    <span id="toggleIcon">▶</span>
+  </div>
+</nav>
+
+<!-- MAIN -->
+<div class="main" id="mainContent">
+  <div class="topbar">
+    <div class="topbar-title" id="topbarTitle">Dashboard</div>
+    <div class="topbar-right">
+      <div id="liveIndicator" style="display:none;" class="status-live"><div class="live-dot"></div>EN DIRECT</div>
+      <button class="btn btn-primary btn-sm" onclick="openModal('streamModal')">+ Nouveau stream</button>
+      <div class="avatar">ST</div>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- DASHBOARD -->
+    <div class="page active" id="page-dashboard">
+      <div class="next-stream-card">
+        <div class="stream-countdown">🔴 Prochain stream dans 2 jours</div>
+        <div class="stream-title-big">Minecraft SMP Saison 3 – Episode 12</div>
+        <div class="stream-meta">
+          <span>📅 Vendredi 13 juin 2026</span>
+          <span>⏰ 20:00</span>
+          <span>⏱️ 3h00 prévu</span>
+          <span>🎮 Minecraft</span>
+        </div>
+        <div style="margin-top:16px; display:flex; gap:10px;">
+          <button class="btn btn-primary btn-sm" onclick="navigate('timer',null)">▶ Démarrer l'horodateur</button>
+          <button class="btn btn-outline btn-sm" onclick="navigate('prep',null)">📋 Préparer le stream</button>
+        </div>
+      </div>
+
+      <div class="grid-4" style="margin-bottom:24px;">
+        <div class="stat-card">
+          <div class="stat-label">Streams cette semaine</div>
+          <div class="stat-value" style="color:var(--primary)">3</div>
+          <div class="stat-sub"><span class="stat-trend">↑ +1 vs semaine dernière</span></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Temps streamé</div>
+          <div class="stat-value" style="color:var(--blue)">8h45</div>
+          <div class="stat-sub"><span class="stat-trend">↑ +2h15 vs semaine dernière</span></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Vidéos créées</div>
+          <div class="stat-value" style="color:var(--accent)">12</div>
+          <div class="stat-sub"><span style="color:var(--text2); font-size:12px;">TikTok, Shorts, Reels</span></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">En attente</div>
+          <div class="stat-value" style="color:var(--yellow)">4</div>
+          <div class="stat-sub"><span style="color:var(--text2); font-size:12px;">Conversion en cours</span></div>
+        </div>
+      </div>
+
+      <div class="quick-actions">
+        <div class="quick-action" onclick="openModal('streamModal')">
+          <div class="qa-icon">📅</div>
+          <div class="qa-label">Créer un stream</div>
+        </div>
+        <div class="quick-action" onclick="navigate('ideas',null)">
+          <div class="qa-icon">💡</div>
+          <div class="qa-label">Ajouter une idée</div>
+        </div>
+        <div class="quick-action" onclick="navigate('videos',null)">
+          <div class="qa-icon">🎬</div>
+          <div class="qa-label">Importer une vidéo</div>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Activité récente</div>
+            <div class="card-badge badge-purple">7 jours</div>
+          </div>
+          <div class="activity-list">
+            <div class="activity-item">
+              <div class="activity-icon" style="background:var(--accent-dim)">🎬</div>
+              <div class="activity-info">
+                <div class="activity-name">Clip TikTok – Moment épique</div>
+                <div class="activity-date">Aujourd'hui, 14:22</div>
+              </div>
+              <div class="activity-status" style="color:var(--accent)">Prêt</div>
+            </div>
+            <div class="activity-item">
+              <div class="activity-icon" style="background:var(--primary-dim)">⏱️</div>
+              <div class="activity-info">
+                <div class="activity-name">Stream GTA RP terminé</div>
+                <div class="activity-date">Hier, 23:45</div>
+              </div>
+              <div class="activity-status" style="color:var(--primary)">3h12</div>
+            </div>
+            <div class="activity-item">
+              <div class="activity-icon" style="background:rgba(255,209,102,.15)">💡</div>
+              <div class="activity-info">
+                <div class="activity-name">5 idées générées – Valorant</div>
+                <div class="activity-date">Il y a 2 jours</div>
+              </div>
+              <div class="activity-status" style="color:var(--yellow)">Sauvegardées</div>
+            </div>
+            <div class="activity-item">
+              <div class="activity-icon" style="background:var(--accent-dim)">📝</div>
+              <div class="activity-info">
+                <div class="activity-name">Préparation stream Minecraft</div>
+                <div class="activity-date">Il y a 3 jours</div>
+              </div>
+              <div class="activity-status" style="color:var(--accent)">Complète</div>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Prochains streams</div>
+            <button class="btn btn-ghost btn-sm" onclick="navigate('agenda',null)">Voir agenda →</button>
+          </div>
+          <div class="activity-list">
+            <div class="activity-item">
+              <div class="activity-icon" style="background:var(--primary-dim);font-size:14px;font-weight:700;font-family:'Space Grotesk',sans-serif;color:var(--primary)">13</div>
+              <div class="activity-info">
+                <div class="activity-name">Minecraft SMP S3 – Ep.12</div>
+                <div class="activity-date">Vendredi 20:00 · 3h prévues</div>
+              </div>
+              <div class="card-badge badge-purple">Vendredi</div>
+            </div>
+            <div class="activity-item">
+              <div class="activity-icon" style="background:var(--primary-dim);font-size:14px;font-weight:700;font-family:'Space Grotesk',sans-serif;color:var(--primary)">15</div>
+              <div class="activity-info">
+                <div class="activity-name">Just Chatting – Q&A</div>
+                <div class="activity-date">Dimanche 17:00 · 2h prévues</div>
+              </div>
+              <div class="card-badge badge-green">Dimanche</div>
+            </div>
+            <div class="activity-item">
+              <div class="activity-icon" style="background:var(--primary-dim);font-size:14px;font-weight:700;font-family:'Space Grotesk',sans-serif;color:var(--primary)">17</div>
+              <div class="activity-info">
+                <div class="activity-name">GTA RP – Nouvelle vie</div>
+                <div class="activity-date">Mardi 21:00 · 4h prévues</div>
+              </div>
+              <div class="card-badge badge-yellow">Mardi</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AGENDA -->
+    <div class="page" id="page-agenda">
+      <div class="section-title">📅 Agenda</div>
+      <div class="section-sub">Organisez et planifiez vos sessions de streaming</div>
+      <div class="card" style="margin-bottom:20px;">
+        <div class="calendar-nav">
+          <button class="btn btn-ghost btn-sm">◀</button>
+          <h3>Juin 2026</h3>
+          <button class="btn btn-ghost btn-sm">▶</button>
+          <button class="btn btn-outline btn-sm">Semaine</button>
+          <button class="btn btn-primary btn-sm" onclick="openModal('streamModal')">+ Nouveau stream</button>
+        </div>
+        <div class="calendar-grid">
+          <div class="cal-header">Lun</div><div class="cal-header">Mar</div><div class="cal-header">Mer</div>
+          <div class="cal-header">Jeu</div><div class="cal-header">Ven</div><div class="cal-header">Sam</div><div class="cal-header">Dim</div>
+          <div class="cal-day"><div class="cal-day-num">1</div></div>
+          <div class="cal-day"><div class="cal-day-num">2</div></div>
+          <div class="cal-day"><div class="cal-day-num">3</div><div class="cal-event">GTA RP 21:00</div></div>
+          <div class="cal-day"><div class="cal-day-num">4</div></div>
+          <div class="cal-day has-stream"><div class="cal-day-num">5</div><div class="cal-event green">Minecraft 20:00</div></div>
+          <div class="cal-day"><div class="cal-day-num">6</div></div>
+          <div class="cal-day"><div class="cal-day-num">7</div><div class="cal-event">Just Chat 17:00</div></div>
+          <div class="cal-day"><div class="cal-day-num">8</div></div>
+          <div class="cal-day"><div class="cal-day-num">9</div></div>
+          <div class="cal-day today"><div class="cal-day-num">10</div></div>
+          <div class="cal-day"><div class="cal-day-num">11</div></div>
+          <div class="cal-day"><div class="cal-day-num">12</div></div>
+          <div class="cal-day"><div class="cal-day-num">13</div><div class="cal-event green">Minecraft SMP 20:00</div></div>
+          <div class="cal-day"><div class="cal-day-num">14</div></div>
+          <div class="cal-day"><div class="cal-day-num">15</div><div class="cal-event">Just Chat 17:00</div></div>
+          <div class="cal-day"><div class="cal-day-num">16</div></div>
+          <div class="cal-day has-stream"><div class="cal-day-num">17</div><div class="cal-event green">GTA RP 21:00</div></div>
+          <div class="cal-day"><div class="cal-day-num">18</div></div>
+          <div class="cal-day"><div class="cal-day-num">19</div></div>
+          <div class="cal-day"><div class="cal-day-num">20</div><div class="cal-event">Valorant 19:00</div></div>
+          <div class="cal-day"><div class="cal-day-num">21</div></div>
+          <div class="cal-day"><div class="cal-day-num">22</div></div>
+          <div class="cal-day"><div class="cal-day-num">23</div></div>
+          <div class="cal-day"><div class="cal-day-num">24</div></div>
+          <div class="cal-day"><div class="cal-day-num">25</div></div>
+          <div class="cal-day"><div class="cal-day-num">26</div></div>
+          <div class="cal-day"><div class="cal-day-num">27</div><div class="cal-event green">Minecraft 20:00</div></div>
+          <div class="cal-day"><div class="cal-day-num">28</div></div>
+          <div class="cal-day"><div class="cal-day-num">29</div></div>
+          <div class="cal-day"><div class="cal-day-num">30</div><div class="cal-event">Just Chat 17:00</div></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Streams planifiés</div>
+          <div class="card-badge badge-purple">6 streams</div>
+        </div>
+        <div class="stream-list-agenda">
+          <div class="stream-row">
+            <div class="stream-row-date"><div class="sr-day">13</div><div class="sr-month">Juin</div></div>
+            <div class="stream-row-info">
+              <div class="sr-title">Minecraft SMP Saison 3 – Episode 12</div>
+              <div class="sr-meta"><span>⏰ 20:00</span><span>⏱️ 3h00</span><span>🎮 Minecraft</span></div>
+            </div>
+            <div class="stream-row-actions">
+              <button class="btn btn-outline btn-sm">✏️</button>
+              <button class="btn btn-outline btn-sm">📋</button>
+              <button class="btn btn-danger btn-sm">🗑️</button>
+            </div>
+          </div>
+          <div class="stream-row">
+            <div class="stream-row-date"><div class="sr-day">15</div><div class="sr-month">Juin</div></div>
+            <div class="stream-row-info">
+              <div class="sr-title">Just Chatting – Questions / Réponses</div>
+              <div class="sr-meta"><span>⏰ 17:00</span><span>⏱️ 2h00</span><span>🎮 Just Chatting</span></div>
+            </div>
+            <div class="stream-row-actions">
+              <button class="btn btn-outline btn-sm">✏️</button>
+              <button class="btn btn-outline btn-sm">📋</button>
+              <button class="btn btn-danger btn-sm">🗑️</button>
+            </div>
+          </div>
+          <div class="stream-row">
+            <div class="stream-row-date"><div class="sr-day">17</div><div class="sr-month">Juin</div></div>
+            <div class="stream-row-info">
+              <div class="sr-title">GTA RP – Nouvelle vie en cours</div>
+              <div class="sr-meta"><span>⏰ 21:00</span><span>⏱️ 4h00</span><span>🎮 GTA V RP</span></div>
+            </div>
+            <div class="stream-row-actions">
+              <button class="btn btn-outline btn-sm">✏️</button>
+              <button class="btn btn-outline btn-sm">📋</button>
+              <button class="btn btn-danger btn-sm">🗑️</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- HORODATEUR -->
+    <div class="page" id="page-timer">
+      <div class="section-title">⏱️ Horodateur</div>
+      <div class="section-sub">Gérez et suivez la durée de vos sessions de streaming</div>
+      <div class="grid-2" style="align-items:start;">
+        <div class="card">
+          <div class="card-header"><div class="card-title">Durée cible</div></div>
+          <div class="duration-selector">
+            <div class="dur-btn" onclick="setDuration(90,this)">1h30</div>
+            <div class="dur-btn" onclick="setDuration(120,this)">2h00</div>
+            <div class="dur-btn active" onclick="setDuration(150,this)">2h30</div>
+            <div class="dur-btn" onclick="setDuration(180,this)">3h00</div>
+            <div class="dur-btn" onclick="setDuration(210,this)">3h30</div>
+            <div class="dur-btn" onclick="setDuration(240,this)">4h00</div>
+            <div class="dur-btn" onclick="setDuration(270,this)">4h30</div>
+            <div class="dur-btn" onclick="setDuration(300,this)">5h00</div>
+            <div class="dur-btn" onclick="setDuration(330,this)">5h30</div>
+            <div class="dur-btn" onclick="setDuration(360,this)">6h00</div>
+          </div>
+          <div class="timer-center">
+            <div class="timer-display" id="timerDisplay">00:00:00</div>
+            <div class="timer-label">Temps écoulé</div>
+            <div class="timer-progress-bar" style="margin-top:16px;">
+              <div class="timer-progress-fill" id="timerProgress" style="width:0%"></div>
+            </div>
+            <div style="display:flex; justify-content:space-between; font-size:12px; color:var(--text2); margin-top:6px;">
+              <span id="timerElapsed">0 min écoulées</span>
+              <span id="timerTarget">2h30 prévues</span>
+              <span id="timerRemaining">2h30 restantes</span>
+            </div>
+          </div>
+          <div class="timer-controls">
+            <button class="timer-btn start" id="timerStartBtn" onclick="timerStart()" title="Démarrer">▶</button>
+            <button class="timer-btn pause" id="timerPauseBtn" onclick="timerPause()" title="Pause" style="opacity:.4; pointer-events:none;">⏸</button>
+            <button class="timer-btn stop" id="timerStopBtn" onclick="timerStop()" title="Arrêter" style="opacity:.4; pointer-events:none;">⏹</button>
+          </div>
+          <div class="timer-stats">
+            <div class="t-stat"><div class="t-stat-val" id="tStatElapsed">0:00</div><div class="t-stat-lbl">Écoulé</div></div>
+            <div class="t-stat"><div class="t-stat-val" id="tStatPercent">0%</div><div class="t-stat-lbl">Avancement</div></div>
+            <div class="t-stat"><div class="t-stat-val" id="tStatRemaining">2:30</div><div class="t-stat-lbl">Restant</div></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Historique des sessions</div>
+            <div class="card-badge badge-purple">8 sessions</div>
+          </div>
+          <table class="history-table">
+            <thead>
+              <tr><th>Date</th><th>Titre</th><th>Prévu</th><th>Réel</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>09/06</td><td>GTA RP</td><td>3h00</td><td style="color:var(--accent)">3h12</td></tr>
+              <tr><td>07/06</td><td>Minecraft</td><td>2h30</td><td style="color:var(--accent)">2h45</td></tr>
+              <tr><td>05/06</td><td>Valorant</td><td>4h00</td><td style="color:var(--danger)">2h55</td></tr>
+              <tr><td>03/06</td><td>Just Chat</td><td>2h00</td><td style="color:var(--accent)">2h18</td></tr>
+              <tr><td>01/06</td><td>GTA RP</td><td>4h00</td><td style="color:var(--accent)">4h02</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- PREPARATION -->
+    <div class="page" id="page-prep">
+      <div class="section-title">📋 Préparation de stream</div>
+      <div class="section-sub">Planifiez chaque détail de votre prochain stream</div>
+      <div class="grid-2" style="align-items:start;">
+        <div>
+          <div class="card" style="margin-bottom:16px;">
+            <div class="prep-section-title">📡 Informations générales</div>
+            <div class="form-group">
+              <label class="form-label">Titre du stream</label>
+              <input class="form-input" value="Minecraft SMP Saison 3 – Episode 12">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Jeu / Catégorie</label>
+              <select class="form-select"><option>Minecraft</option><option>GTA V RP</option><option>Valorant</option><option>Just Chatting</option><option>Fortnite</option><option>League of Legends</option></select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Objectif du live</label>
+              <input class="form-input" placeholder="Ex: Finir le château, atteindre 500 viewers...">
+            </div>
+          </div>
+          <div class="card">
+            <div class="prep-section-title">📌 Programme prévu</div>
+            <div class="checklist-item"><input type="checkbox" id="c1"><label for="c1">Introduction & accueil du chat</label></div>
+            <div class="checklist-item"><input type="checkbox" id="c2" checked><label for="c2">Construction de la tour principale</label></div>
+            <div class="checklist-item"><input type="checkbox" id="c3"><label for="c3">Exploration des mines</label></div>
+            <div class="checklist-item"><input type="checkbox" id="c4"><label for="c4">Combat contre le dragon</label></div>
+            <div class="checklist-item"><input type="checkbox" id="c5"><label for="c5">Outro + récap du stream</label></div>
+            <button class="btn btn-ghost btn-sm" style="margin-top:10px;">+ Ajouter une activité</button>
+          </div>
+        </div>
+        <div>
+          <div class="card" style="margin-bottom:16px;">
+            <div class="prep-section-title">🌟 Moments forts à clipper</div>
+            <div class="form-group">
+              <textarea class="form-textarea" placeholder="Notez les moments clés à capturer pour TikTok et Shorts...&#10;Ex: Boss final, moment drôle avec le chat, speedrun fail..."></textarea>
+            </div>
+            <div class="prep-section-title">🎯 Objectifs de contenu</div>
+            <div class="tag-cloud">
+              <div class="tag active">🎵 TikTok x3</div>
+              <div class="tag active">▶️ Shorts x2</div>
+              <div class="tag">📸 Reels x1</div>
+              <div class="tag">🎬 Long clip YouTube</div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="prep-section-title">👥 Invités & événements</div>
+            <div class="form-group">
+              <label class="form-label">Invités prévus</label>
+              <input class="form-input" placeholder="Pseudo des invités...">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Événements importants</label>
+              <textarea class="form-textarea" style="min-height:70px;" placeholder="Annonces, giveaway, subathon..."></textarea>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Défis à réaliser</label>
+              <input class="form-input" placeholder="Ex: Gagner sans armure, challenge chat...">
+            </div>
+            <button class="btn btn-primary" style="width:100%; justify-content:center; margin-top:8px;">💾 Sauvegarder la préparation</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- IDEES -->
+    <div class="page" id="page-ideas">
+      <div class="section-title">💡 Générateur d'idées</div>
+      <div class="section-sub">Trouvez de l'inspiration pour votre prochain contenu</div>
+      <div class="idea-generator">
+        <h3>✨ Génération IA d'idées de stream</h3>
+        <p>Sélectionnez un jeu et une catégorie pour recevoir 10 idées personnalisées</p>
+        <div class="idea-row">
+          <select class="form-select" id="ideaGame" style="max-width:200px;">
+            <option>Minecraft</option><option>GTA RP</option><option>Fortnite</option><option>Valorant</option><option>League of Legends</option><option>Just Chatting</option>
+          </select>
+          <select class="form-select" id="ideaCategory" style="max-width:200px;">
+            <option>Challenge</option><option>Speedrun</option><option>Roleplay</option><option>Compétitif</option><option>Débutant</option><option>Créatif</option>
+          </select>
+          <button class="btn btn-primary" id="genIdeasBtn" onclick="generateIdeas()">⚡ Générer 10 idées</button>
+        </div>
+      </div>
+      <div id="ideasContainer" class="idea-cards">
+        <div class="idea-card">
+          <div class="idea-num">Idée 01</div>
+          <div class="idea-category-badge">Challenge</div>
+          <p>Construire la plus grande pyramide en 2 heures avec uniquement du sable – le chat vote la couleur à chaque palier</p>
+          <div class="idea-actions">
+            <button class="btn btn-outline btn-sm">💾 Sauvegarder</button>
+            <button class="btn btn-ghost btn-sm">📋 Utiliser</button>
+          </div>
+        </div>
+        <div class="idea-card saved">
+          <div class="idea-num">Idée 02</div>
+          <div class="idea-category-badge">Speedrun</div>
+          <p>Terminer Minecraft en temps réel avec des règles imposées par le chat toutes les 10 minutes</p>
+          <div class="idea-actions">
+            <button class="btn btn-green btn-sm">✅ Sauvegardé</button>
+            <button class="btn btn-ghost btn-sm">📋 Utiliser</button>
+          </div>
+        </div>
+        <div class="idea-card">
+          <div class="idea-num">Idée 03</div>
+          <div class="idea-category-badge">Créatif</div>
+          <p>Recréer un monument du monde réel à l'échelle en mode créatif – vote du monument par le chat en début de stream</p>
+          <div class="idea-actions">
+            <button class="btn btn-outline btn-sm">💾 Sauvegarder</button>
+            <button class="btn btn-ghost btn-sm">📋 Utiliser</button>
+          </div>
+        </div>
+        <div class="idea-card">
+          <div class="idea-num">Idée 04</div>
+          <div class="idea-category-badge">Challenge</div>
+          <p>Survie en mode hardcore avec un système de vies gagnées grâce aux abonnements Twitch du stream</p>
+          <div class="idea-actions">
+            <button class="btn btn-outline btn-sm">💾 Sauvegarder</button>
+            <button class="btn btn-ghost btn-sm">📋 Utiliser</button>
+          </div>
+        </div>
+      </div>
+      <hr class="divider">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Idées sauvegardées</div>
+          <div class="card-badge badge-green">7 idées</div>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:8px; margin-top:8px;">
+          <div class="activity-item">
+            <div class="activity-icon" style="background:var(--accent-dim);">💡</div>
+            <div class="activity-info"><div class="activity-name">Speedrun Minecraft avec règles du chat</div><div class="activity-date">Sauvegardé il y a 2 jours · Minecraft · Speedrun</div></div>
+            <button class="btn btn-ghost btn-sm">📋 Utiliser</button>
+          </div>
+          <div class="activity-item">
+            <div class="activity-icon" style="background:rgba(255,77,106,.15);">💡</div>
+            <div class="activity-info"><div class="activity-name">GTA RP Braquage en solo – tout planifier en direct</div><div class="activity-date">Sauvegardé il y a 5 jours · GTA RP · Roleplay</div></div>
+            <button class="btn btn-ghost btn-sm">📋 Utiliser</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- VIDEOS -->
+    <div class="page" id="page-videos">
+      <div class="section-title">🎬 Gestion des vidéos</div>
+      <div class="section-sub">Importez et convertissez vos rediffusions en contenus courts</div>
+      <div class="upload-zone" onclick="notify('Fenêtre de sélection de fichier simulée','info')">
+        <div class="uz-icon">📤</div>
+        <h3>Glissez-déposez votre vidéo ici</h3>
+        <p>Formats acceptés : MP4, MOV, AVI · Taille max : 5 Go</p>
+        <button class="btn btn-primary" style="margin-top:16px;">Choisir un fichier</button>
+      </div>
+      <div class="card" style="margin-bottom:20px;">
+        <div class="card-header">
+          <div class="card-title">Format de conversion</div>
+          <div class="card-badge badge-purple">Sélectionnez un format</div>
+        </div>
+        <div class="format-grid">
+          <div class="format-card active" onclick="selectFormat(this)">
+            <div class="format-icon">📱</div>
+            <div class="format-name">TikTok</div>
+            <div class="format-dim">9:16 · 1080×1920</div>
+          </div>
+          <div class="format-card" onclick="selectFormat(this)">
+            <div class="format-icon">▶️</div>
+            <div class="format-name">Shorts</div>
+            <div class="format-dim">9:16 · 1080×1920</div>
+          </div>
+          <div class="format-card" onclick="selectFormat(this)">
+            <div class="format-icon">📸</div>
+            <div class="format-name">Reels</div>
+            <div class="format-dim">9:16 · 1080×1920</div>
+          </div>
+          <div class="format-card" onclick="selectFormat(this)">
+            <div class="format-icon">🖥️</div>
+            <div class="format-name">YouTube</div>
+            <div class="format-dim">16:9 · 1920×1080</div>
+          </div>
+        </div>
+        <button class="btn btn-primary" onclick="notify('Conversion démarrée ! La vidéo sera disponible dans la bibliothèque.','success')">⚡ Lancer la conversion</button>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Vidéos récentes</div>
+          <div class="card-badge badge-purple">12 vidéos</div>
+        </div>
+        <div class="video-grid" style="margin-top:12px;">
+          <div class="video-thumb">
+            <div class="vt-preview">🎮<div class="vt-overlay">▶</div></div>
+            <div class="vt-info"><div class="vt-name">GTA RP – Braquage épique</div><div class="vt-meta"><span>TikTok 9:16</span><span style="color:var(--accent)">Prêt</span></div></div>
+          </div>
+          <div class="video-thumb">
+            <div class="vt-preview" style="background:linear-gradient(135deg,#1a2a1a,#0d0f14)">⚔️<div class="vt-overlay">▶</div></div>
+            <div class="vt-info"><div class="vt-name">Minecraft – Dragon Kill</div><div class="vt-meta"><span>Shorts 9:16</span><span style="color:var(--accent)">Prêt</span></div></div>
+          </div>
+          <div class="video-thumb">
+            <div class="vt-preview" style="background:linear-gradient(135deg,#1a1a2a,#0d0f14)">🔫<div class="vt-overlay">▶</div></div>
+            <div class="vt-info"><div class="vt-name">Valorant – Ace clip</div><div class="vt-meta"><span>Reels 9:16</span><span style="color:var(--yellow)">En conversion</span></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SOUS-TITRES -->
+    <div class="page" id="page-subtitles">
+      <div class="section-title">💬 Sous-titres automatiques</div>
+      <div class="section-sub">Générez et personnalisez des sous-titres par reconnaissance vocale IA</div>
+      <div class="grid-2" style="align-items:start;">
+        <div>
+          <div class="card" style="margin-bottom:16px;">
+            <div class="card-header"><div class="card-title">Aperçu</div></div>
+            <div class="subtitle-preview">
+              <div class="subtitle-text" id="subtitlePreview" style="font-size:18px; font-weight:700;">Bonjour tout le monde !</div>
+            </div>
+            <div style="display:flex; gap:8px; justify-content:center; margin-top:12px;">
+              <button class="btn btn-outline btn-sm">◀ Précédent</button>
+              <button class="btn btn-primary btn-sm">▶ Lecture</button>
+              <button class="btn btn-outline btn-sm">Suivant ▶</button>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header"><div class="card-title">Personnalisation</div></div>
+            <div class="subtitle-controls">
+              <div class="form-group">
+                <label class="form-label">Taille du texte</label>
+                <select class="form-select" onchange="updateSubtitlePreview(this)">
+                  <option value="14px">Petit (14px)</option>
+                  <option value="18px" selected>Moyen (18px)</option>
+                  <option value="24px">Grand (24px)</option>
+                  <option value="32px">Très grand (32px)</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Style</label>
+                <select class="form-select">
+                  <option>Normal</option><option>Gras</option><option>Italique</option><option>Contour blanc</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Position</label>
+                <select class="form-select">
+                  <option>Bas (défaut)</option><option>Centre</option><option>Haut</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Couleur du texte</label>
+                <select class="form-select">
+                  <option>Blanc</option><option>Jaune</option><option>Cyan</option><option>Personnalisée</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="card" style="margin-bottom:16px;">
+            <div class="card-header"><div class="card-title">Génération automatique</div><div class="card-badge badge-purple">OpenAI Whisper</div></div>
+            <div class="upload-zone" style="padding:28px; margin-bottom:0;">
+              <div class="uz-icon">🎤</div>
+              <h3>Importer une vidéo</h3>
+              <p>La reconnaissance vocale IA génère les sous-titres</p>
+              <button class="btn btn-primary" style="margin-top:12px;" onclick="notify('Génération des sous-titres en cours...','info')">🤖 Générer les sous-titres</button>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header"><div class="card-title">Sous-titres générés</div></div>
+            <div style="display:flex; flex-direction:column; gap:6px; max-height:220px; overflow-y:auto;">
+              <div style="display:flex; gap:10px; padding:8px; background:var(--bg2); border-radius:8px; font-size:13px; cursor:pointer; border:1px solid var(--primary);">
+                <span style="color:var(--text2); min-width:80px;">00:00 – 00:03</span>
+                <span>Bonjour tout le monde !</span>
+              </div>
+              <div style="display:flex; gap:10px; padding:8px; background:var(--bg2); border-radius:8px; font-size:13px; cursor:pointer; border:1px solid var(--border);">
+                <span style="color:var(--text2); min-width:80px;">00:03 – 00:07</span>
+                <span>Bienvenue sur mon stream, aujourd'hui on joue à Minecraft.</span>
+              </div>
+              <div style="display:flex; gap:10px; padding:8px; background:var(--bg2); border-radius:8px; font-size:13px; cursor:pointer; border:1px solid var(--border);">
+                <span style="color:var(--text2); min-width:80px;">00:08 – 00:12</span>
+                <span>On va essayer de finir le donjon cette fois-ci !</span>
+              </div>
+              <div style="display:flex; gap:10px; padding:8px; background:var(--bg2); border-radius:8px; font-size:13px; cursor:pointer; border:1px solid var(--border);">
+                <span style="color:var(--text2); min-width:80px;">00:13 – 00:18</span>
+                <span>Pour les nouveaux, n'oubliez pas de vous abonner !</span>
+              </div>
+            </div>
+            <button class="btn btn-primary" style="width:100%; justify-content:center; margin-top:14px;" onclick="notify('Vidéo exportée avec les sous-titres intégrés !','success')">⬇️ Exporter la vidéo avec sous-titres</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- BIBLIOTHEQUE -->
+    <div class="page" id="page-library">
+      <div class="section-title">🗂️ Bibliothèque</div>
+      <div class="section-sub">Consultez et gérez toutes vos créations vidéo</div>
+      <div class="card" style="margin-bottom:20px;">
+        <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+          <input class="form-input" placeholder="🔍 Rechercher une vidéo..." style="max-width:260px;">
+          <select class="form-select" style="max-width:150px;"><option>Tous formats</option><option>TikTok</option><option>Shorts</option><option>Reels</option><option>YouTube</option></select>
+          <select class="form-select" style="max-width:150px;"><option>Tous statuts</option><option>Prêt</option><option>En conversion</option><option>Brouillon</option></select>
+          <button class="btn btn-outline btn-sm">Filtrer</button>
+        </div>
+      </div>
+      <div class="video-grid">
+        <div class="video-thumb">
+          <div class="vt-preview">🎮<div class="vt-overlay">▶</div></div>
+          <div class="vt-info">
+            <div class="vt-name">GTA RP – Braquage épique</div>
+            <div class="vt-meta"><span>TikTok</span><span>08/06/2026</span></div>
+            <div style="display:flex; gap:4px; margin-top:8px;">
+              <button class="btn btn-outline btn-sm">⬇️</button>
+              <button class="btn btn-outline btn-sm">✏️</button>
+              <button class="btn btn-danger btn-sm">🗑️</button>
+            </div>
+          </div>
+        </div>
+        <div class="video-thumb">
+          <div class="vt-preview" style="background:linear-gradient(135deg,#1a2a1a,#0d0f14)">⚔️<div class="vt-overlay">▶</div></div>
+          <div class="vt-info">
+            <div class="vt-name">Minecraft – Dragon Kill</div>
+            <div class="vt-meta"><span>Shorts</span><span>07/06/2026</span></div>
+            <div style="display:flex; gap:4px; margin-top:8px;">
+              <button class="btn btn-outline btn-sm">⬇️</button>
+              <button class="btn btn-outline btn-sm">✏️</button>
+              <button class="btn btn-danger btn-sm">🗑️</button>
+            </div>
+          </div>
+        </div>
+        <div class="video-thumb">
+          <div class="vt-preview" style="background:linear-gradient(135deg,#1a1a2a,#0d0f14)">🔫<div class="vt-overlay">▶</div></div>
+          <div class="vt-info">
+            <div class="vt-name">Valorant – Ace clip</div>
+            <div class="vt-meta"><span>Reels</span><span>06/06/2026</span></div>
+            <div style="display:flex; gap:4px; margin-top:8px;">
+              <button class="btn btn-outline btn-sm">⬇️</button>
+              <button class="btn btn-outline btn-sm">✏️</button>
+              <button class="btn btn-danger btn-sm">🗑️</button>
+            </div>
+          </div>
+        </div>
+        <div class="video-thumb">
+          <div class="vt-preview" style="background:linear-gradient(135deg,#2a1a1a,#0d0f14)">🏆<div class="vt-overlay">▶</div></div>
+          <div class="vt-info">
+            <div class="vt-name">Fortnite – Victory Royale</div>
+            <div class="vt-meta"><span>TikTok</span><span>05/06/2026</span></div>
+            <div style="display:flex; gap:4px; margin-top:8px;">
+              <button class="btn btn-outline btn-sm">⬇️</button>
+              <button class="btn btn-outline btn-sm">✏️</button>
+              <button class="btn btn-danger btn-sm">🗑️</button>
+            </div>
+          </div>
+        </div>
+        <div class="video-thumb">
+          <div class="vt-preview" style="background:linear-gradient(135deg,#1a2a2a,#0d0f14)">🌊<div class="vt-overlay">▶</div></div>
+          <div class="vt-info">
+            <div class="vt-name">Just Chatting – Moment drôle</div>
+            <div class="vt-meta"><span>Shorts</span><span>04/06/2026</span></div>
+            <div style="display:flex; gap:4px; margin-top:8px;">
+              <button class="btn btn-outline btn-sm">⬇️</button>
+              <button class="btn btn-outline btn-sm">✏️</button>
+              <button class="btn btn-danger btn-sm">🗑️</button>
+            </div>
+          </div>
+        </div>
+        <div class="video-thumb">
+          <div class="vt-preview" style="background:linear-gradient(135deg,#2a2a1a,#0d0f14)">⚡<div class="vt-overlay">▶</div></div>
+          <div class="vt-info">
+            <div class="vt-name">LoL – Penta Kill Clean</div>
+            <div class="vt-meta"><span>Reels</span><span>03/06/2026</span></div>
+            <div style="display:flex; gap:4px; margin-top:8px;">
+              <button class="btn btn-outline btn-sm">⬇️</button>
+              <button class="btn btn-outline btn-sm">✏️</button>
+              <button class="btn btn-danger btn-sm">🗑️</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- IA -->
+    <div class="page" id="page-ai">
+      <div class="section-title">🤖 Intelligence Artificielle</div>
+      <div class="section-sub">Générez titres, descriptions et hashtags pour toutes vos plateformes</div>
+      <div class="ai-tool-card">
+        <div class="ai-tool-header">
+          <div class="ai-tool-icon" style="background:var(--primary-dim)">🏷️</div>
+          <div>
+            <div class="card-title">Générateur de titres</div>
+            <div style="font-size:12px; color:var(--text2);">Créez des titres accrocheurs optimisés par plateforme</div>
+          </div>
+        </div>
+        <div class="platform-tabs">
+          <div class="platform-tab active">Twitch</div>
+          <div class="platform-tab">TikTok</div>
+          <div class="platform-tab">YouTube</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Sujet / Jeu</label>
+          <input class="form-input" id="aiTitleInput" placeholder="Ex: Minecraft, Valorant, Just Chatting...">
+        </div>
+        <button class="btn btn-primary" onclick="generateAIContent('titles')">✨ Générer des titres</button>
+        <div id="aiTitlesResult" class="ai-result" style="margin-top:14px; display:none;"></div>
+      </div>
+
+      <div class="ai-tool-card">
+        <div class="ai-tool-header">
+          <div class="ai-tool-icon" style="background:var(--accent-dim)">📝</div>
+          <div>
+            <div class="card-title">Générateur de descriptions</div>
+            <div style="font-size:12px; color:var(--text2);">Descriptions optimisées SEO pour vos vidéos et streams</div>
+          </div>
+        </div>
+        <div class="platform-tabs">
+          <div class="platform-tab active">Vidéo</div>
+          <div class="platform-tab">Stream</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Contexte du contenu</label>
+          <textarea class="form-textarea" style="min-height:70px;" placeholder="Décrivez votre stream ou vidéo..."></textarea>
+        </div>
+        <button class="btn btn-primary" onclick="generateAIContent('description')">✨ Générer une description</button>
+        <div id="aiDescResult" class="ai-result" style="margin-top:14px; display:none;"></div>
+      </div>
+
+      <div class="ai-tool-card">
+        <div class="ai-tool-header">
+          <div class="ai-tool-icon" style="background:rgba(255,209,102,.15)">🔖</div>
+          <div>
+            <div class="card-title">Générateur de hashtags</div>
+            <div style="font-size:12px; color:var(--text2);">Hashtags tendance pour maximiser votre portée</div>
+          </div>
+        </div>
+        <div class="platform-tabs">
+          <div class="platform-tab active">TikTok</div>
+          <div class="platform-tab">Shorts</div>
+          <div class="platform-tab">Reels</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Thème / Jeu</label>
+          <input class="form-input" placeholder="Ex: Minecraft, Gaming, Clip...">
+        </div>
+        <button class="btn btn-primary" onclick="generateAIContent('hashtags')">✨ Générer les hashtags</button>
+        <div id="aiHashResult" class="ai-result" style="margin-top:14px; display:none;"></div>
+      </div>
+    </div>
+
+    <!-- PARAMETRES -->
+    <div class="page" id="page-settings">
+      <div class="section-title">⚙️ Paramètres</div>
+      <div class="section-sub">Gérez votre profil et vos préférences</div>
+      <div class="settings-section">
+        <div class="settings-title">👤 Profil utilisateur</div>
+        <div class="profile-avatar-edit">
+          <div class="profile-avatar-img">ST</div>
+          <div class="profile-avatar-edit-btn">✏️</div>
+        </div>
+        <div class="grid-2">
+          <div class="form-group">
+            <label class="form-label">Pseudo</label>
+            <input class="form-input" value="StreamerTest">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Adresse email</label>
+            <input class="form-input" type="email" value="test@streamhub.fr">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Nouveau mot de passe</label>
+          <input class="form-input" type="password" placeholder="Laisser vide pour ne pas changer">
+        </div>
+        <button class="btn btn-primary" onclick="notify('Profil mis à jour avec succès !','success')">💾 Sauvegarder les modifications</button>
+      </div>
+      <div class="settings-section">
+        <div class="settings-title">📡 Plateforme principale</div>
+        <div class="platform-select-grid">
+          <div class="platform-item active" onclick="selectPlatform(this)"><div class="pi-icon">💜</div>Twitch</div>
+          <div class="platform-item" onclick="selectPlatform(this)"><div class="pi-icon">🔴</div>YouTube</div>
+          <div class="platform-item" onclick="selectPlatform(this)"><div class="pi-icon">🎵</div>TikTok</div>
+          <div class="platform-item" onclick="selectPlatform(this)"><div class="pi-icon">🟢</div>Kick</div>
+          <div class="platform-item" onclick="selectPlatform(this)"><div class="pi-icon">🔵</div>Facebook Gaming</div>
+          <div class="platform-item" onclick="selectPlatform(this)"><div class="pi-icon">🌐</div>Multi-plateforme</div>
+        </div>
+      </div>
+      <div class="settings-section">
+        <div class="settings-title">🔔 Notifications</div>
+        <div style="display:flex; flex-direction:column; gap:10px;">
+          <div class="checklist-item"><input type="checkbox" id="n1" checked><label for="n1">Rappel avant stream (30 min)</label></div>
+          <div class="checklist-item"><input type="checkbox" id="n2" checked><label for="n2">Alerte fin de durée prévue</label></div>
+          <div class="checklist-item"><input type="checkbox" id="n3"><label for="n3">Notification sonore horodateur</label></div>
+          <div class="checklist-item"><input type="checkbox" id="n4" checked><label for="n4">Vidéo prête à télécharger</label></div>
+        </div>
+      </div>
+      <div class="settings-section" style="border-color:var(--danger);">
+        <div class="settings-title" style="color:var(--danger);">⚠️ Zone de danger</div>
+        <p style="font-size:13px; color:var(--text2); margin-bottom:16px;">Ces actions sont irréversibles. Procédez avec précaution.</p>
+        <div style="display:flex; gap:10px;">
+          <button class="btn btn-danger btn-sm">Supprimer toutes les vidéos</button>
+          <button class="btn btn-danger btn-sm">Supprimer mon compte</button>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /main -->
+</div><!-- /appShell -->
+
+<!-- MODAL NOUVEAU STREAM -->
+<div class="modal-overlay" id="streamModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">📅 Nouveau stream</div>
+      <div class="modal-close" onclick="closeModal('streamModal')">✕</div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Titre du stream</label>
+      <input class="form-input" placeholder="Mon incroyable stream...">
+    </div>
+    <div class="grid-2">
+      <div class="form-group">
+        <label class="form-label">Date</label>
+        <input class="form-input" type="date">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Heure de début</label>
+        <input class="form-input" type="time" value="20:00">
+      </div>
+    </div>
+    <div class="grid-2">
+      <div class="form-group">
+        <label class="form-label">Jeu</label>
+        <select class="form-select">
+          <option>Minecraft</option><option>GTA V RP</option><option>Valorant</option><option>Fortnite</option><option>League of Legends</option><option>Just Chatting</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Durée prévue</label>
+        <select class="form-select">
+          <option>1h30</option><option>2h00</option><option selected>2h30</option><option>3h00</option><option>3h30</option><option>4h00</option><option>4h30</option><option>5h00</option><option>5h30</option><option>6h00</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Notes</label>
+      <textarea class="form-textarea" placeholder="Objectifs, thèmes, remarques..."></textarea>
+    </div>
+    <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:8px;">
+      <button class="btn btn-outline" onclick="closeModal('streamModal')">Annuler</button>
+      <button class="btn btn-primary" onclick="saveStream()">📅 Créer le stream</button>
+    </div>
+  </div>
+</div>
+
+<!-- NOTIFICATIONS -->
+<div class="notif" id="notifications"></div>
+
+<script>
+// ================= AUTH =================
+function switchAuthTab(tab, el) {
+  document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('loginForm').style.display = tab === 'login' ? 'block' : 'none';
+  document.getElementById('registerForm').style.display = tab === 'register' ? 'block' : 'none';
+}
+
+function loginUser() {
+  document.getElementById('authPage').style.display = 'none';
+  document.getElementById('appShell').style.display = 'flex';
+  notify('Bienvenue sur StreamHub ! 🎮', 'success');
+}
+
+// ================= NAVIGATION =================
+const pageNames = {
+  dashboard: 'Dashboard', agenda: 'Agenda', timer: 'Horodateur',
+  prep: 'Préparation de stream', ideas: 'Générateur d\'idées', videos: 'Gestion des vidéos',
+  subtitles: 'Sous-titres automatiques', library: 'Bibliothèque', ai: 'Intelligence IA', settings: 'Paramètres'
+};
+
+function navigate(page, navEl) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+  if (navEl) navEl.classList.add('active');
+  else {
+    document.querySelectorAll('.nav-item').forEach(n => {
+      if (n.getAttribute('onclick') && n.getAttribute('onclick').includes("'" + page + "'")) n.classList.add('active');
+    });
+  }
+  document.getElementById('topbarTitle').textContent = pageNames[page] || page;
+}
+
+// ================= SIDEBAR =================
+let sidebarOpen = false;
+function toggleSidebar() {
+  sidebarOpen = !sidebarOpen;
+  const sb = document.getElementById('sidebar');
+  const main = document.getElementById('mainContent');
+  const logo = document.getElementById('sidebarLogo');
+  const icon = document.getElementById('toggleIcon');
+  sb.classList.toggle('expanded', sidebarOpen);
+  main.classList.toggle('expanded', sidebarOpen);
+  logo.textContent = sidebarOpen ? 'StreamHub' : 'SH';
+  icon.textContent = sidebarOpen ? '◀' : '▶';
+}
+
+// ================= TIMER =================
+let timerInterval = null, timerRunning = false, timerPaused = false;
+let timerSeconds = 0, timerDuration = 150 * 60;
+
+function setDuration(min, el) {
+  document.querySelectorAll('.dur-btn').forEach(b => b.classList.remove('active'));
+  if(el) el.classList.add('active');
+  timerDuration = min * 60;
+  const h = Math.floor(min/60), m = min%60;
+  document.getElementById('timerTarget').textContent = (h > 0 ? h+'h' : '') + (m > 0 ? (m < 10 && h > 0 ? '0'+m : m)+'min' : '') + ' prévues';
+  document.getElementById('timerRemaining').textContent = (h > 0 ? h+'h' : '') + (m > 0 ? (m < 10 && h > 0 ? '0'+m : m)+'min' : '') + ' restantes';
+  document.getElementById('tStatRemaining').textContent = (h > 0 ? h+':' : '') + (m < 10 ? '0' : '') + m;
+}
+
+function fmtTime(s) {
+  const h = Math.floor(s/3600), m = Math.floor((s%3600)/60), sec = s%60;
+  return (h<10?'0':'')+h+':'+(m<10?'0':'')+m+':'+(sec<10?'0':'')+sec;
+}
+
+function timerStart() {
+  if (timerRunning && !timerPaused) return;
+  timerRunning = true; timerPaused = false;
+  document.getElementById('timerStartBtn').style.opacity = '.4';
+  document.getElementById('timerStartBtn').style.pointerEvents = 'none';
+  document.getElementById('timerPauseBtn').style.opacity = '1';
+  document.getElementById('timerPauseBtn').style.pointerEvents = 'all';
+  document.getElementById('timerStopBtn').style.opacity = '1';
+  document.getElementById('timerStopBtn').style.pointerEvents = 'all';
+  document.getElementById('liveIndicator').style.display = 'flex';
+  timerInterval = setInterval(() => {
+    timerSeconds++;
+    document.getElementById('timerDisplay').textContent = fmtTime(timerSeconds);
+    const pct = Math.min((timerSeconds / timerDuration) * 100, 100);
+    document.getElementById('timerProgress').style.width = pct + '%';
+    const h = Math.floor(timerSeconds/3600), m = Math.floor((timerSeconds%3600)/60);
+    document.getElementById('tStatElapsed').textContent = (h>0?h+':':'')+(m<10?'0':'')+m;
+    document.getElementById('tStatPercent').textContent = Math.floor(pct) + '%';
+    const rem = Math.max(timerDuration - timerSeconds, 0);
+    const rh = Math.floor(rem/3600), rm = Math.floor((rem%3600)/60);
+    document.getElementById('tStatRemaining').textContent = (rh>0?rh+':':'')+(rm<10?'0':'')+rm;
+    const elapsed = timerSeconds, el = (Math.floor(elapsed/60));
+    document.getElementById('timerElapsed').textContent = el + ' min écoulées';
+    const remMin = Math.floor(rem/60);
+    document.getElementById('timerRemaining').textContent = remMin + ' min restantes';
+    if (timerSeconds >= timerDuration) { notify('⏱️ Temps prévu atteint ! Continuez ou arrêtez le stream.', 'info'); }
+  }, 1000);
+}
+
+function timerPause() {
+  if (!timerRunning) return;
+  if (!timerPaused) {
+    clearInterval(timerInterval); timerPaused = true;
+    document.getElementById('timerPauseBtn').textContent = '▶';
+    notify('Horodateur en pause', 'info');
+  } else {
+    timerStart();
+    document.getElementById('timerPauseBtn').textContent = '⏸';
+  }
+}
+
+function timerStop() {
+  clearInterval(timerInterval); timerRunning = false; timerPaused = false;
+  timerSeconds = 0;
+  document.getElementById('timerDisplay').textContent = '00:00:00';
+  document.getElementById('timerProgress').style.width = '0%';
+  document.getElementById('timerStartBtn').style.opacity = '1';
+  document.getElementById('timerStartBtn').style.pointerEvents = 'all';
+  document.getElementById('timerPauseBtn').style.opacity = '.4';
+  document.getElementById('timerPauseBtn').style.pointerEvents = 'none';
+  document.getElementById('timerStopBtn').style.opacity = '.4';
+  document.getElementById('timerStopBtn').style.pointerEvents = 'none';
+  document.getElementById('liveIndicator').style.display = 'none';
+  document.getElementById('timerPauseBtn').textContent = '⏸';
+  notify('Stream terminé ! Session sauvegardée dans l\'historique.', 'success');
+}
+
+// ================= MODAL =================
+function openModal(id) {
+  document.getElementById(id).classList.add('open');
+}
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+}
+
+function saveStream() {
+  closeModal('streamModal');
+  notify('Stream créé et ajouté à l\'agenda ! 📅', 'success');
+}
+
+// ================= FORMATS =================
+function selectFormat(el) {
+  document.querySelectorAll('.format-card').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+}
+
+function selectPlatform(el) {
+  document.querySelectorAll('.platform-item').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+}
+
+// ================= IA =================
+const aiTitles = {
+  minecraft: ['🏆 J\'AI CONSTRUIT LE PLUS GRAND CHÂTEAU MINECRAFT EN 6H | LIVE !','⚔️ ON SURVIT 24H EN HARDCORE ? Le défi impossible...','🔥 MINECRAFT SMP SAISON 3 – Le donjon maudit est pour ce soir !'],
+  valorant: ['🎯 RANKED VALORANT | MONTÉE VERS RADIANT – Épisode 5','💥 10 ACE EN LIVE ? Le défi impossible avec les subs !','🔫 VALORANT CUSTOM GAMES AVEC VOUS | !join pour participer'],
+  default: ['🔥 LE MEILLEUR STREAM DE MA VIE – Ne ratez pas ça !','⚡ LIVE EXCEPTIONNEL | Objectif record de viewers ce soir !','🎮 NOUVEAU JEU, NOUVELLES SENSATIONS | Live en direct !']
+};
+
+const aiDescriptions = [`🎮 Bienvenue sur mon stream ! Aujourd'hui on plonge dans une session épique.\n\n📌 Programme :\n• Warm-up rapide\n• Défi communautaire\n• Sessions ranked\n• Fin de stream avec Q&A\n\n💬 N'hésitez pas à interagir dans le chat, toutes les questions sont les bienvenues !\n\n📲 Retrouvez-moi sur TikTok et Instagram pour les meilleurs clips.\n\n🔔 Abonnez-vous pour ne rater aucune session !`];
+
+const aiHashtags = ['#minecraft #gaming #stream #twitch #live #gameplay #gamer #fyp #viral #twitch #streamer #clip #highlight #FR #francais #gamingfr #contentcreator #foryou'];
+
+function generateAIContent(type) {
+  if (type === 'titles') {
+    const val = document.getElementById('aiTitleInput').value.toLowerCase();
+    const titles = aiTitles[val] || aiTitles.default;
+    const el = document.getElementById('aiTitlesResult');
+    el.style.display = 'block';
+    el.innerHTML = titles.map(t => `<div style="padding:8px 0; border-bottom:1px solid var(--border); cursor:pointer;" onclick="notify('Titre copié dans le presse-papiers !','success')">${t}</div>`).join('');
+    notify('3 titres générés !', 'success');
+  } else if (type === 'description') {
+    const el = document.getElementById('aiDescResult');
+    el.style.display = 'block';
+    el.innerHTML = `<pre style="white-space:pre-wrap; font-family:'Inter',sans-serif;">${aiDescriptions[0]}</pre>`;
+    notify('Description générée !', 'success');
+  } else if (type === 'hashtags') {
+    const el = document.getElementById('aiHashResult');
+    el.style.display = 'block';
+    el.innerHTML = `<div style="line-height:2;">${aiHashtags[0].split(' ').map(h => `<span style="background:var(--primary-dim); color:var(--primary); padding:3px 8px; border-radius:10px; margin:2px; display:inline-block; font-size:12px;">${h}</span>`).join('')}</div>`;
+    notify('Hashtags générés !', 'success');
+  }
+}
+
+// ================= IDEAS =================
+const ideaPool = [
+  "Construire une ville entière en survie, un quartier par stream – le chat nomme chaque quartier",
+  "Speedrun avec des règles aléatoires imposées par le chat toutes les 10 minutes",
+  "Recréer un monument mondial célèbre, voté par le chat en début de stream",
+  "Survie hardcore avec des vies bonus gagnées grâce aux abonnements",
+  "Challenge : terminer le jeu en mode facile... en utilisant uniquement un instrument de musique",
+  "Construction en compétition contre un viewer tiré au sort en début de live",
+  "Jeu en miroir : tout se passe en sens inverse (contrôles inversés, carte miroir)",
+  "Stream blindfolded : jouer sans voir l'écran, guidé uniquement par le chat",
+  "Un stream entier en rôleplay avec un personnage créé par le chat en live",
+  "Défi : finir le jeu le plus vite possible, chaque mort = un gage demandé par le chat"
+];
+
+function generateIdeas() {
+  const btn = document.getElementById('genIdeasBtn');
+  btn.innerHTML = '<span class="spinner"></span> Génération...';
+  btn.disabled = true;
+  setTimeout(() => {
+    btn.innerHTML = '⚡ Générer 10 idées';
+    btn.disabled = false;
+    const game = document.getElementById('ideaGame').value;
+    const cat = document.getElementById('ideaCategory').value;
+    const container = document.getElementById('ideasContainer');
+    container.innerHTML = '';
+    const shuffled = [...ideaPool].sort(() => Math.random() - .5);
+    shuffled.forEach((idea, i) => {
+      const card = document.createElement('div');
+      card.className = 'idea-card';
+      card.innerHTML = `<div class="idea-num">Idée ${String(i+1).padStart(2,'0')}</div>
+        <div class="idea-category-badge">${cat}</div>
+        <p>${idea.replace('le jeu', game)}</p>
+        <div class="idea-actions">
+          <button class="btn btn-outline btn-sm" onclick="saveIdea(this)">💾 Sauvegarder</button>
+          <button class="btn btn-ghost btn-sm">📋 Utiliser</button>
+        </div>`;
+      container.appendChild(card);
+    });
+    notify(`10 nouvelles idées générées pour ${game} !`, 'success');
+  }, 1200);
+}
+
+function saveIdea(btn) {
+  const card = btn.closest('.idea-card');
+  card.classList.add('saved');
+  btn.className = 'btn btn-green btn-sm';
+  btn.textContent = '✅ Sauvegardé';
+  notify('Idée sauvegardée dans votre collection !', 'success');
+}
+
+// ================= SUBTITLES =================
+function updateSubtitlePreview(sel) {
+  document.getElementById('subtitlePreview').style.fontSize = sel.value;
+}
+
+// ================= NOTIFICATIONS =================
+function notify(msg, type = 'info') {
+  const container = document.getElementById('notifications');
+  const el = document.createElement('div');
+  el.className = `notif-item ${type}`;
+  const icons = { success: '✅', info: '💡', warning: '⚠️' };
+  el.innerHTML = `<span>${icons[type]||'ℹ️'}</span><span>${msg}</span>`;
+  container.appendChild(el);
+  setTimeout(() => { el.style.opacity = '0'; el.style.transform = 'translateX(40px)'; el.style.transition = 'all .3s'; setTimeout(() => el.remove(), 300); }, 3500);
+}
+
+// Close modal on overlay click
+document.querySelectorAll('.modal-overlay').forEach(m => {
+  m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); });
+});
+
+// Titlebar maximize toggle
+async function toggleMax() {
+  if (!window.electronAPI) return;
+  await window.electronAPI.maximize();
+  const isMax = await window.electronAPI.isMaximized();
+  document.getElementById('maxBtn').innerHTML = isMax ? '&#x2750;' : '&#x25A1;';
+}
+
+// ================= MISES À JOUR =================
+let _pendingVersion = null;
+let _updateDismissed = false;
+
+async function initUpdater() {
+  if (!window.electronAPI) return;
+
+  // Afficher la version dans la titlebar
+  const v = await window.electronAPI.getVersion();
+  const tag = document.getElementById('appVersionTag');
+  if (tag) tag.textContent = 'v' + v;
+
+  // Écouter les événements de téléchargement
+  window.electronAPI.onDownloadProgress((pct) => {
+    document.getElementById('updateProgressFill').style.width = pct + '%';
+    document.getElementById('updateProgressLabel').textContent = 'Téléchargement… ' + pct + '%';
+  });
+
+  window.electronAPI.onDownloadReady((version) => {
+    showUpdateState('ready');
+    document.getElementById('updateModalClose').style.display = 'flex';
+    if (!document.getElementById('updateModal').classList.contains('open')) {
+      showUpdateBanner(version, true);
+    }
+  });
+
+  window.electronAPI.onDownloadError((msg) => {
+    showUpdateState('error');
+    document.getElementById('updateErrorMsg').textContent = '❌ Erreur : ' + (msg || 'Téléchargement échoué');
+    document.getElementById('updateModalClose').style.display = 'flex';
+  });
+
+  // Vérifier les mises à jour au démarrage (délai 3s pour ne pas ralentir le chargement)
+  setTimeout(checkForUpdates, 3000);
+}
+
+async function checkForUpdates() {
+  if (!window.electronAPI || _updateDismissed) return;
+  try {
+    const result = await window.electronAPI.checkUpdate();
+    if (!result.available) return;
+
+    _pendingVersion = result.version;
+    document.getElementById('updateVersionBadge').textContent = 'v' + result.version;
+
+    if (result.ready) {
+      showUpdateState('ready');
+      showUpdateBanner(result.version, true);
+    } else {
+      showUpdateBanner(result.version, false);
+    }
+  } catch {}
+}
+
+function showUpdateBanner(version, ready) {
+  if (_updateDismissed) return;
+  const banner = document.getElementById('updateBanner');
+  const text = document.getElementById('updateBannerText');
+  text.textContent = ready
+    ? `v${version} téléchargée — prête à installer`
+    : `v${version} disponible`;
+  banner.classList.add('visible');
+
+  // Décaler le contenu principal sous la bannière
+  document.querySelector('.sidebar').style.top = (38 + 46) + 'px';
+  document.querySelector('.main').style.maxHeight = 'calc(100vh - ' + (38 + 46) + 'px)';
+  document.querySelectorAll('.topbar').forEach(t => t.style.top = (38 + 46) + 'px');
+}
+
+function dismissUpdateBanner() {
+  _updateDismissed = true;
+  const banner = document.getElementById('updateBanner');
+  banner.classList.remove('visible');
+  document.querySelector('.sidebar').style.top = '38px';
+  document.querySelector('.main').style.maxHeight = 'calc(100vh - 38px)';
+  document.querySelectorAll('.topbar').forEach(t => t.style.top = '38px');
+}
+
+function showUpdateState(state) {
+  ['idle', 'downloading', 'ready', 'error'].forEach(s => {
+    document.getElementById('updateState' + s.charAt(0).toUpperCase() + s.slice(1)).style.display =
+      s === state ? 'block' : 'none';
+  });
+}
+
+async function startUpdate() {
+  if (!window.electronAPI) return;
+  showUpdateState('downloading');
+  document.getElementById('updateModalClose').style.display = 'none';
+  await window.electronAPI.startDownload();
+}
+
+async function installAndRestart() {
+  if (!window.electronAPI) return;
+  await window.electronAPI.installAndRestart();
+}
+
+function openReleaseNotes() {
+  if (window.electronAPI) {
+    window.electronAPI.openUrl('https://github.com/shootinger/streamhub/releases/latest');
+  }
+}
+
+// Init au chargement
+document.addEventListener('DOMContentLoaded', initUpdater);
+</script>
+</body>
+</html>

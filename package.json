@@ -1,0 +1,59 @@
+{
+  "name": "streamhub",
+  "version": "1.0.0",
+  "description": "StreamHub — Votre studio de contenu",
+  "author": "shootinger",
+  "main": "main.js",
+  "scripts": {
+    "start": "npx electron .",
+    "build": "electron-builder --win --x64",
+    "package": "npx @electron/packager . StreamHub --platform=win32 --arch=x64 --out=dist-pkg --overwrite --icon=assets/icon.ico --ignore=node_modules --ignore=dist --ignore=dist-pkg --app-version=1.0.0 --no-asar"
+  },
+  "build": {
+    "appId": "com.streamhub.app",
+    "productName": "StreamHub",
+    "copyright": "StreamHub 2026",
+    "directories": {
+      "output": "dist"
+    },
+    "asar": false,
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "assets/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "installerIcon": "assets/icon.ico",
+      "uninstallerIcon": "assets/icon.ico",
+      "installerHeaderIcon": "assets/icon.ico",
+      "shortcutName": "StreamHub"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "index.html",
+      "assets/**"
+    ]
+  },
+  "devDependencies": {
+    "@electron/packager": "^20.0.1",
+    "electron": "^42.4.0",
+    "electron-builder": "^26.15.2"
+  }
+}
