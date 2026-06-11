@@ -1,7 +1,7 @@
 {
   "name": "streamhub",
-  "version": "1.0.1",
-  "description": "StreamHub — Studio de contenu pour streamers",
+  "version": "1.0.3",
+  "description": "Créatique — Studio de contenu pour streamers",
   "author": "shootinger",
   "main": "main.js",
   "scripts": {
@@ -10,7 +10,7 @@
   },
   "build": {
     "appId": "com.streamhub.app",
-    "productName": "StreamHub",
+    "productName": "Créatique",
     "directories": {
       "output": "C:\\Users\\geoff\\Desktop\\StreamHub-Build"
     },
@@ -32,7 +32,7 @@
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": false,
       "createStartMenuShortcut": true,
-      "shortcutName": "StreamHub",
+      "shortcutName": "Créatique",
       "perMachine": false,
       "allowElevation": true,
       "runAfterFinish": true,

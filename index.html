@@ -1,9 +1,9 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>StreamHub — Votre studio de contenu</title>
+<title>Créatique — Votre studio de contenu</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
@@ -50,6 +50,7 @@
   .update-progress-fill { height: 100%; background: linear-gradient(90deg, var(--primary), var(--accent)); border-radius: 4px; transition: width .4s; width: 0%; }
   .update-progress-label { font-size: 13px; color: var(--text2); }
   .version-tag { font-size: 11px; color: var(--text3); margin-left: 6px; }
+  .by-shootr { font-size: 11px; color: var(--accent); margin-left: 8px; opacity: 0.8; }
 
   /* BOUTON MISE À JOUR — états */
   #updateBtn { display: flex !important; }
@@ -91,10 +92,11 @@
   }
   .sidebar.expanded { width:220px; align-items:flex-start; padding:20px 12px; }
   .sidebar-logo {
-    font-family:'Space Grotesk',sans-serif; font-size:22px; font-weight:700;
-    color:var(--primary); letter-spacing:-0.5px; margin-bottom:20px; padding:0 4px;
-    white-space:nowrap; overflow:hidden;
+    display:flex; align-items:center; justify-content:center;
+    margin-bottom:20px; padding:0 4px; overflow:hidden;
   }
+  .sidebar-logo img.logo-icon { width:36px; height:36px; object-fit:contain; transition:all 0.2s; }
+  .sidebar-logo img.logo-full { width:110px; height:36px; object-fit:contain; transition:all 0.2s; }
   .sidebar-logo span { color:var(--text); }
   .nav-item {
     width:48px; height:48px; border-radius:12px; display:flex; align-items:center; justify-content:center;
@@ -425,7 +427,8 @@
   /* AUTH PAGE */
   .auth-page { display:flex; align-items:center; justify-content:center; min-height:100vh; width:100%; background:var(--bg); }
   .auth-card { background:var(--card); border:1px solid var(--border); border-radius:24px; padding:36px; width:420px; }
-  .auth-logo { font-family:'Space Grotesk',sans-serif; font-size:28px; font-weight:700; color:var(--primary); text-align:center; margin-bottom:6px; }
+  .auth-logo { text-align:center; margin-bottom:6px; }
+  .auth-logo img { height:60px; object-fit:contain; }
   .auth-tagline { text-align:center; color:var(--text2); font-size:13px; margin-bottom:28px; }
   .auth-tabs { display:flex; background:var(--bg2); border-radius:10px; padding:3px; margin-bottom:24px; }
   .auth-tab { flex:1; text-align:center; padding:9px; border-radius:8px; cursor:pointer; font-size:13px; font-weight:500; transition:all .2s; color:var(--text2); }
@@ -439,7 +442,7 @@
 
 <!-- CUSTOM TITLEBAR -->
 <div class="titlebar">
-  <div class="titlebar-left">StreamHub <span>— Votre studio de contenu</span><span id="appVersionTag" class="version-tag"></span></div>
+  <div class="titlebar-left"><img src="assets/logo.png" alt="Créatique" style="height:20px;object-fit:contain;"> <span>— Votre studio de contenu</span><span id="appVersionTag" class="version-tag"></span><span class="by-shootr">by Shoot'R</span></div>
   <div class="titlebar-controls">
     <button class="tb-btn" onclick="window.electronAPI?.minimize()" title="Réduire">&#x2013;</button>
     <button class="tb-btn" id="maxBtn" onclick="toggleMax()" title="Agrandir">&#x25A1;</button>
@@ -466,7 +469,7 @@
 <div class="modal-overlay" id="updateModal">
   <div class="modal" style="width:460px;">
     <div class="modal-header">
-      <div class="modal-title">🚀 Mise à jour StreamHub</div>
+      <div class="modal-title">🚀 Mise à jour Créatique</div>
       <div class="modal-close" id="updateModalClose" onclick="closeModal('updateModal')">✕</div>
     </div>
     <div class="update-modal-body">
@@ -536,7 +539,7 @@
 <!-- AUTH PAGE -->
 <div id="authPage" class="auth-page">
   <div class="auth-card">
-    <div class="auth-logo">StreamHub</div>
+    <div class="auth-logo"><img src="assets/logo.png" alt="Créatique"></div>
     <div class="auth-tagline">Votre studio de contenu tout-en-un</div>
     <div class="auth-tabs">
       <div class="auth-tab active" onclick="switchAuthTab('login',this)">Connexion</div>
@@ -586,7 +589,7 @@
 
 <!-- SIDEBAR -->
 <nav class="sidebar" id="sidebar">
-  <div class="sidebar-logo" id="sidebarLogo">SH</div>
+  <div class="sidebar-logo" id="sidebarLogo"><img id="sidebarLogoImg" src="assets/logo.png" alt="Créatique" class="logo-icon"></div>
   <div class="nav-item active" onclick="navigate('dashboard',this)" title="Dashboard">
     <span class="nav-icon">⚡</span><span class="nav-label">Dashboard</span>
   </div>
@@ -632,8 +635,8 @@
         <span id="updateBtnIcon">🔄</span>
         <span id="updateBtnLabel">Mise à jour</span>
       </button>
-      <button class="btn btn-primary btn-sm" onclick="openModal('streamModal')">+ Nouveau stream</button>
-      <div class="avatar">ST</div>
+      <button class="btn btn-primary btn-sm" onclick="openStreamModal(null)">+ Nouveau stream</button>
+      <div class="avatar" id="userAvatar">ST</div>
     </div>
   </div>
 
@@ -641,15 +644,10 @@
 
     <!-- DASHBOARD -->
     <div class="page active" id="page-dashboard">
-      <div class="next-stream-card">
-        <div class="stream-countdown">🔴 Prochain stream dans 2 jours</div>
-        <div class="stream-title-big">Minecraft SMP Saison 3 – Episode 12</div>
-        <div class="stream-meta">
-          <span>📅 Vendredi 13 juin 2026</span>
-          <span>⏰ 20:00</span>
-          <span>⏱️ 3h00 prévu</span>
-          <span>🎮 Minecraft</span>
-        </div>
+      <div class="next-stream-card" id="dashNextCard">
+        <div class="stream-countdown" id="dashCountdown">🔴 Prochain stream</div>
+        <div class="stream-title-big" id="dashNextTitle">—</div>
+        <div class="stream-meta" id="dashNextMeta"></div>
         <div style="margin-top:16px; display:flex; gap:10px;">
           <button class="btn btn-primary btn-sm" onclick="navigate('timer',null)">▶ Démarrer l'horodateur</button>
           <button class="btn btn-outline btn-sm" onclick="navigate('prep',null)">📋 Préparer le stream</button>
@@ -658,29 +656,29 @@
 
       <div class="grid-4" style="margin-bottom:24px;">
         <div class="stat-card">
-          <div class="stat-label">Streams cette semaine</div>
-          <div class="stat-value" style="color:var(--primary)">3</div>
-          <div class="stat-sub"><span class="stat-trend">↑ +1 vs semaine dernière</span></div>
+          <div class="stat-label">Sessions streamées</div>
+          <div class="stat-value" id="statStreams" style="color:var(--primary)">0</div>
+          <div class="stat-sub"><span class="stat-trend" id="statStreamsSub">Total enregistré</span></div>
         </div>
         <div class="stat-card">
           <div class="stat-label">Temps streamé</div>
-          <div class="stat-value" style="color:var(--blue)">8h45</div>
-          <div class="stat-sub"><span class="stat-trend">↑ +2h15 vs semaine dernière</span></div>
+          <div class="stat-value" id="statTime" style="color:var(--blue)">0h00</div>
+          <div class="stat-sub"><span class="stat-trend" id="statTimeSub">Toutes sessions</span></div>
         </div>
         <div class="stat-card">
-          <div class="stat-label">Vidéos créées</div>
-          <div class="stat-value" style="color:var(--accent)">12</div>
-          <div class="stat-sub"><span style="color:var(--text2); font-size:12px;">TikTok, Shorts, Reels</span></div>
+          <div class="stat-label">Streams planifiés</div>
+          <div class="stat-value" id="statPlanned" style="color:var(--accent)">0</div>
+          <div class="stat-sub"><span style="color:var(--text2); font-size:12px;" id="statPlannedSub">À venir</span></div>
         </div>
         <div class="stat-card">
-          <div class="stat-label">En attente</div>
-          <div class="stat-value" style="color:var(--yellow)">4</div>
-          <div class="stat-sub"><span style="color:var(--text2); font-size:12px;">Conversion en cours</span></div>
+          <div class="stat-label">Idées sauvegardées</div>
+          <div class="stat-value" id="statIdeas" style="color:var(--yellow)">0</div>
+          <div class="stat-sub"><span style="color:var(--text2); font-size:12px;">Dans la collection</span></div>
         </div>
       </div>
 
       <div class="quick-actions">
-        <div class="quick-action" onclick="openModal('streamModal')">
+        <div class="quick-action" onclick="openStreamModal(null)">
           <div class="qa-icon">📅</div>
           <div class="qa-label">Créer un stream</div>
         </div>
@@ -740,32 +738,7 @@
             <div class="card-title">Prochains streams</div>
             <button class="btn btn-ghost btn-sm" onclick="navigate('agenda',null)">Voir agenda →</button>
           </div>
-          <div class="activity-list">
-            <div class="activity-item">
-              <div class="activity-icon" style="background:var(--primary-dim);font-size:14px;font-weight:700;font-family:'Space Grotesk',sans-serif;color:var(--primary)">13</div>
-              <div class="activity-info">
-                <div class="activity-name">Minecraft SMP S3 – Ep.12</div>
-                <div class="activity-date">Vendredi 20:00 · 3h prévues</div>
-              </div>
-              <div class="card-badge badge-purple">Vendredi</div>
-            </div>
-            <div class="activity-item">
-              <div class="activity-icon" style="background:var(--primary-dim);font-size:14px;font-weight:700;font-family:'Space Grotesk',sans-serif;color:var(--primary)">15</div>
-              <div class="activity-info">
-                <div class="activity-name">Just Chatting – Q&A</div>
-                <div class="activity-date">Dimanche 17:00 · 2h prévues</div>
-              </div>
-              <div class="card-badge badge-green">Dimanche</div>
-            </div>
-            <div class="activity-item">
-              <div class="activity-icon" style="background:var(--primary-dim);font-size:14px;font-weight:700;font-family:'Space Grotesk',sans-serif;color:var(--primary)">17</div>
-              <div class="activity-info">
-                <div class="activity-name">GTA RP – Nouvelle vie</div>
-                <div class="activity-date">Mardi 21:00 · 4h prévues</div>
-              </div>
-              <div class="card-badge badge-yellow">Mardi</div>
-            </div>
-          </div>
+          <div class="activity-list" id="dashUpcoming"></div>
         </div>
       </div>
     </div>
@@ -776,45 +749,15 @@
       <div class="section-sub">Organisez et planifiez vos sessions de streaming</div>
       <div class="card" style="margin-bottom:20px;">
         <div class="calendar-nav">
-          <button class="btn btn-ghost btn-sm">◀</button>
-          <h3>Juin 2026</h3>
-          <button class="btn btn-ghost btn-sm">▶</button>
-          <button class="btn btn-outline btn-sm">Semaine</button>
-          <button class="btn btn-primary btn-sm" onclick="openModal('streamModal')">+ Nouveau stream</button>
+          <button class="btn btn-ghost btn-sm" onclick="prevMonth()">◀</button>
+          <h3 id="calMonthTitle">Juin 2026</h3>
+          <button class="btn btn-ghost btn-sm" onclick="nextMonth()">▶</button>
+          <button class="btn btn-outline btn-sm" onclick="goToday()">Aujourd'hui</button>
+          <button class="btn btn-primary btn-sm" onclick="openStreamModal(null)">+ Nouveau stream</button>
         </div>
-        <div class="calendar-grid">
+        <div class="calendar-grid" id="calGrid">
           <div class="cal-header">Lun</div><div class="cal-header">Mar</div><div class="cal-header">Mer</div>
           <div class="cal-header">Jeu</div><div class="cal-header">Ven</div><div class="cal-header">Sam</div><div class="cal-header">Dim</div>
-          <div class="cal-day"><div class="cal-day-num">1</div></div>
-          <div class="cal-day"><div class="cal-day-num">2</div></div>
-          <div class="cal-day"><div class="cal-day-num">3</div><div class="cal-event">GTA RP 21:00</div></div>
-          <div class="cal-day"><div class="cal-day-num">4</div></div>
-          <div class="cal-day has-stream"><div class="cal-day-num">5</div><div class="cal-event green">Minecraft 20:00</div></div>
-          <div class="cal-day"><div class="cal-day-num">6</div></div>
-          <div class="cal-day"><div class="cal-day-num">7</div><div class="cal-event">Just Chat 17:00</div></div>
-          <div class="cal-day"><div class="cal-day-num">8</div></div>
-          <div class="cal-day"><div class="cal-day-num">9</div></div>
-          <div class="cal-day today"><div class="cal-day-num">10</div></div>
-          <div class="cal-day"><div class="cal-day-num">11</div></div>
-          <div class="cal-day"><div class="cal-day-num">12</div></div>
-          <div class="cal-day"><div class="cal-day-num">13</div><div class="cal-event green">Minecraft SMP 20:00</div></div>
-          <div class="cal-day"><div class="cal-day-num">14</div></div>
-          <div class="cal-day"><div class="cal-day-num">15</div><div class="cal-event">Just Chat 17:00</div></div>
-          <div class="cal-day"><div class="cal-day-num">16</div></div>
-          <div class="cal-day has-stream"><div class="cal-day-num">17</div><div class="cal-event green">GTA RP 21:00</div></div>
-          <div class="cal-day"><div class="cal-day-num">18</div></div>
-          <div class="cal-day"><div class="cal-day-num">19</div></div>
-          <div class="cal-day"><div class="cal-day-num">20</div><div class="cal-event">Valorant 19:00</div></div>
-          <div class="cal-day"><div class="cal-day-num">21</div></div>
-          <div class="cal-day"><div class="cal-day-num">22</div></div>
-          <div class="cal-day"><div class="cal-day-num">23</div></div>
-          <div class="cal-day"><div class="cal-day-num">24</div></div>
-          <div class="cal-day"><div class="cal-day-num">25</div></div>
-          <div class="cal-day"><div class="cal-day-num">26</div></div>
-          <div class="cal-day"><div class="cal-day-num">27</div><div class="cal-event green">Minecraft 20:00</div></div>
-          <div class="cal-day"><div class="cal-day-num">28</div></div>
-          <div class="cal-day"><div class="cal-day-num">29</div></div>
-          <div class="cal-day"><div class="cal-day-num">30</div><div class="cal-event">Just Chat 17:00</div></div>
         </div>
       </div>
       <div class="card">
@@ -822,44 +765,7 @@
           <div class="card-title">Streams planifiés</div>
           <div class="card-badge badge-purple">6 streams</div>
         </div>
-        <div class="stream-list-agenda">
-          <div class="stream-row">
-            <div class="stream-row-date"><div class="sr-day">13</div><div class="sr-month">Juin</div></div>
-            <div class="stream-row-info">
-              <div class="sr-title">Minecraft SMP Saison 3 – Episode 12</div>
-              <div class="sr-meta"><span>⏰ 20:00</span><span>⏱️ 3h00</span><span>🎮 Minecraft</span></div>
-            </div>
-            <div class="stream-row-actions">
-              <button class="btn btn-outline btn-sm">✏️</button>
-              <button class="btn btn-outline btn-sm">📋</button>
-              <button class="btn btn-danger btn-sm">🗑️</button>
-            </div>
-          </div>
-          <div class="stream-row">
-            <div class="stream-row-date"><div class="sr-day">15</div><div class="sr-month">Juin</div></div>
-            <div class="stream-row-info">
-              <div class="sr-title">Just Chatting – Questions / Réponses</div>
-              <div class="sr-meta"><span>⏰ 17:00</span><span>⏱️ 2h00</span><span>🎮 Just Chatting</span></div>
-            </div>
-            <div class="stream-row-actions">
-              <button class="btn btn-outline btn-sm">✏️</button>
-              <button class="btn btn-outline btn-sm">📋</button>
-              <button class="btn btn-danger btn-sm">🗑️</button>
-            </div>
-          </div>
-          <div class="stream-row">
-            <div class="stream-row-date"><div class="sr-day">17</div><div class="sr-month">Juin</div></div>
-            <div class="stream-row-info">
-              <div class="sr-title">GTA RP – Nouvelle vie en cours</div>
-              <div class="sr-meta"><span>⏰ 21:00</span><span>⏱️ 4h00</span><span>🎮 GTA V RP</span></div>
-            </div>
-            <div class="stream-row-actions">
-              <button class="btn btn-outline btn-sm">✏️</button>
-              <button class="btn btn-outline btn-sm">📋</button>
-              <button class="btn btn-danger btn-sm">🗑️</button>
-            </div>
-          </div>
-        </div>
+        <div class="stream-list-agenda" id="agendaStreamList"></div>
       </div>
     </div>
 
@@ -914,13 +820,7 @@
             <thead>
               <tr><th>Date</th><th>Titre</th><th>Prévu</th><th>Réel</th></tr>
             </thead>
-            <tbody>
-              <tr><td>09/06</td><td>GTA RP</td><td>3h00</td><td style="color:var(--accent)">3h12</td></tr>
-              <tr><td>07/06</td><td>Minecraft</td><td>2h30</td><td style="color:var(--accent)">2h45</td></tr>
-              <tr><td>05/06</td><td>Valorant</td><td>4h00</td><td style="color:var(--danger)">2h55</td></tr>
-              <tr><td>03/06</td><td>Just Chat</td><td>2h00</td><td style="color:var(--accent)">2h18</td></tr>
-              <tr><td>01/06</td><td>GTA RP</td><td>4h00</td><td style="color:var(--accent)">4h02</td></tr>
-            </tbody>
+            <tbody id="timerHistoryTbody"></tbody>
           </table>
         </div>
       </div>
@@ -1009,41 +909,9 @@
         </div>
       </div>
       <div id="ideasContainer" class="idea-cards">
-        <div class="idea-card">
-          <div class="idea-num">Idée 01</div>
-          <div class="idea-category-badge">Challenge</div>
-          <p>Construire la plus grande pyramide en 2 heures avec uniquement du sable – le chat vote la couleur à chaque palier</p>
-          <div class="idea-actions">
-            <button class="btn btn-outline btn-sm">💾 Sauvegarder</button>
-            <button class="btn btn-ghost btn-sm">📋 Utiliser</button>
-          </div>
-        </div>
-        <div class="idea-card saved">
-          <div class="idea-num">Idée 02</div>
-          <div class="idea-category-badge">Speedrun</div>
-          <p>Terminer Minecraft en temps réel avec des règles imposées par le chat toutes les 10 minutes</p>
-          <div class="idea-actions">
-            <button class="btn btn-green btn-sm">✅ Sauvegardé</button>
-            <button class="btn btn-ghost btn-sm">📋 Utiliser</button>
-          </div>
-        </div>
-        <div class="idea-card">
-          <div class="idea-num">Idée 03</div>
-          <div class="idea-category-badge">Créatif</div>
-          <p>Recréer un monument du monde réel à l'échelle en mode créatif – vote du monument par le chat en début de stream</p>
-          <div class="idea-actions">
-            <button class="btn btn-outline btn-sm">💾 Sauvegarder</button>
-            <button class="btn btn-ghost btn-sm">📋 Utiliser</button>
-          </div>
-        </div>
-        <div class="idea-card">
-          <div class="idea-num">Idée 04</div>
-          <div class="idea-category-badge">Challenge</div>
-          <p>Survie en mode hardcore avec un système de vies gagnées grâce aux abonnements Twitch du stream</p>
-          <div class="idea-actions">
-            <button class="btn btn-outline btn-sm">💾 Sauvegarder</button>
-            <button class="btn btn-ghost btn-sm">📋 Utiliser</button>
-          </div>
+        <div class="empty-state" style="grid-column:1/-1; padding:32px;">
+          <div class="es-icon">✨</div>
+          <p>Sélectionnez un jeu et une catégorie, puis cliquez sur "Générer 10 idées"</p>
         </div>
       </div>
       <hr class="divider">
@@ -1052,18 +920,7 @@
           <div class="card-title">Idées sauvegardées</div>
           <div class="card-badge badge-green">7 idées</div>
         </div>
-        <div style="display:flex; flex-direction:column; gap:8px; margin-top:8px;">
-          <div class="activity-item">
-            <div class="activity-icon" style="background:var(--accent-dim);">💡</div>
-            <div class="activity-info"><div class="activity-name">Speedrun Minecraft avec règles du chat</div><div class="activity-date">Sauvegardé il y a 2 jours · Minecraft · Speedrun</div></div>
-            <button class="btn btn-ghost btn-sm">📋 Utiliser</button>
-          </div>
-          <div class="activity-item">
-            <div class="activity-icon" style="background:rgba(255,77,106,.15);">💡</div>
-            <div class="activity-info"><div class="activity-name">GTA RP Braquage en solo – tout planifier en direct</div><div class="activity-date">Sauvegardé il y a 5 jours · GTA RP · Roleplay</div></div>
-            <button class="btn btn-ghost btn-sm">📋 Utiliser</button>
-          </div>
-        </div>
+        <div style="display:flex; flex-direction:column; gap:8px; margin-top:8px;" id="savedIdeasList"></div>
       </div>
     </div>
 
@@ -1220,86 +1077,12 @@
       <div class="section-sub">Consultez et gérez toutes vos créations vidéo</div>
       <div class="card" style="margin-bottom:20px;">
         <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-          <input class="form-input" placeholder="🔍 Rechercher une vidéo..." style="max-width:260px;">
-          <select class="form-select" style="max-width:150px;"><option>Tous formats</option><option>TikTok</option><option>Shorts</option><option>Reels</option><option>YouTube</option></select>
-          <select class="form-select" style="max-width:150px;"><option>Tous statuts</option><option>Prêt</option><option>En conversion</option><option>Brouillon</option></select>
-          <button class="btn btn-outline btn-sm">Filtrer</button>
+          <input class="form-input" id="librarySearch" placeholder="🔍 Rechercher une vidéo..." style="max-width:260px;" oninput="renderLibrary()">
+          <select class="form-select" id="libraryFormatFilter" style="max-width:150px;" onchange="renderLibrary()"><option>Tous formats</option><option>TikTok</option><option>Shorts</option><option>Reels</option><option>YouTube</option></select>
+          <select class="form-select" id="libraryStatusFilter" style="max-width:150px;" onchange="renderLibrary()"><option>Tous statuts</option><option>Prêt</option><option>En conversion</option><option>Brouillon</option></select>
         </div>
       </div>
-      <div class="video-grid">
-        <div class="video-thumb">
-          <div class="vt-preview">🎮<div class="vt-overlay">▶</div></div>
-          <div class="vt-info">
-            <div class="vt-name">GTA RP – Braquage épique</div>
-            <div class="vt-meta"><span>TikTok</span><span>08/06/2026</span></div>
-            <div style="display:flex; gap:4px; margin-top:8px;">
-              <button class="btn btn-outline btn-sm">⬇️</button>
-              <button class="btn btn-outline btn-sm">✏️</button>
-              <button class="btn btn-danger btn-sm">🗑️</button>
-            </div>
-          </div>
-        </div>
-        <div class="video-thumb">
-          <div class="vt-preview" style="background:linear-gradient(135deg,#1a2a1a,#0d0f14)">⚔️<div class="vt-overlay">▶</div></div>
-          <div class="vt-info">
-            <div class="vt-name">Minecraft – Dragon Kill</div>
-            <div class="vt-meta"><span>Shorts</span><span>07/06/2026</span></div>
-            <div style="display:flex; gap:4px; margin-top:8px;">
-              <button class="btn btn-outline btn-sm">⬇️</button>
-              <button class="btn btn-outline btn-sm">✏️</button>
-              <button class="btn btn-danger btn-sm">🗑️</button>
-            </div>
-          </div>
-        </div>
-        <div class="video-thumb">
-          <div class="vt-preview" style="background:linear-gradient(135deg,#1a1a2a,#0d0f14)">🔫<div class="vt-overlay">▶</div></div>
-          <div class="vt-info">
-            <div class="vt-name">Valorant – Ace clip</div>
-            <div class="vt-meta"><span>Reels</span><span>06/06/2026</span></div>
-            <div style="display:flex; gap:4px; margin-top:8px;">
-              <button class="btn btn-outline btn-sm">⬇️</button>
-              <button class="btn btn-outline btn-sm">✏️</button>
-              <button class="btn btn-danger btn-sm">🗑️</button>
-            </div>
-          </div>
-        </div>
-        <div class="video-thumb">
-          <div class="vt-preview" style="background:linear-gradient(135deg,#2a1a1a,#0d0f14)">🏆<div class="vt-overlay">▶</div></div>
-          <div class="vt-info">
-            <div class="vt-name">Fortnite – Victory Royale</div>
-            <div class="vt-meta"><span>TikTok</span><span>05/06/2026</span></div>
-            <div style="display:flex; gap:4px; margin-top:8px;">
-              <button class="btn btn-outline btn-sm">⬇️</button>
-              <button class="btn btn-outline btn-sm">✏️</button>
-              <button class="btn btn-danger btn-sm">🗑️</button>
-            </div>
-          </div>
-        </div>
-        <div class="video-thumb">
-          <div class="vt-preview" style="background:linear-gradient(135deg,#1a2a2a,#0d0f14)">🌊<div class="vt-overlay">▶</div></div>
-          <div class="vt-info">
-            <div class="vt-name">Just Chatting – Moment drôle</div>
-            <div class="vt-meta"><span>Shorts</span><span>04/06/2026</span></div>
-            <div style="display:flex; gap:4px; margin-top:8px;">
-              <button class="btn btn-outline btn-sm">⬇️</button>
-              <button class="btn btn-outline btn-sm">✏️</button>
-              <button class="btn btn-danger btn-sm">🗑️</button>
-            </div>
-          </div>
-        </div>
-        <div class="video-thumb">
-          <div class="vt-preview" style="background:linear-gradient(135deg,#2a2a1a,#0d0f14)">⚡<div class="vt-overlay">▶</div></div>
-          <div class="vt-info">
-            <div class="vt-name">LoL – Penta Kill Clean</div>
-            <div class="vt-meta"><span>Reels</span><span>03/06/2026</span></div>
-            <div style="display:flex; gap:4px; margin-top:8px;">
-              <button class="btn btn-outline btn-sm">⬇️</button>
-              <button class="btn btn-outline btn-sm">✏️</button>
-              <button class="btn btn-danger btn-sm">🗑️</button>
-            </div>
-          </div>
-        </div>
-      </div>
+      <div class="video-grid" id="libraryGrid"></div>
     </div>
 
     <!-- IA -->
@@ -1376,24 +1159,24 @@
       <div class="settings-section">
         <div class="settings-title">👤 Profil utilisateur</div>
         <div class="profile-avatar-edit">
-          <div class="profile-avatar-img">ST</div>
+          <div class="profile-avatar-img" id="profileAvatarText">ST</div>
           <div class="profile-avatar-edit-btn">✏️</div>
         </div>
         <div class="grid-2">
           <div class="form-group">
             <label class="form-label">Pseudo</label>
-            <input class="form-input" value="StreamerTest">
+            <input class="form-input" id="settingsUsername" value="StreamerTest">
           </div>
           <div class="form-group">
             <label class="form-label">Adresse email</label>
-            <input class="form-input" type="email" value="test@streamhub.fr">
+            <input class="form-input" id="settingsEmail" type="email" value="test@creatique.fr">
           </div>
         </div>
         <div class="form-group">
           <label class="form-label">Nouveau mot de passe</label>
           <input class="form-input" type="password" placeholder="Laisser vide pour ne pas changer">
         </div>
-        <button class="btn btn-primary" onclick="notify('Profil mis à jour avec succès !','success')">💾 Sauvegarder les modifications</button>
+        <button class="btn btn-primary" onclick="saveSettings()">💾 Sauvegarder les modifications</button>
       </div>
       <div class="settings-section">
         <div class="settings-title">📡 Plateforme principale</div>
@@ -1433,44 +1216,44 @@
 <div class="modal-overlay" id="streamModal">
   <div class="modal">
     <div class="modal-header">
-      <div class="modal-title">📅 Nouveau stream</div>
+      <div class="modal-title" id="streamModalTitle">📅 Nouveau stream</div>
       <div class="modal-close" onclick="closeModal('streamModal')">✕</div>
     </div>
     <div class="form-group">
       <label class="form-label">Titre du stream</label>
-      <input class="form-input" placeholder="Mon incroyable stream...">
+      <input class="form-input" id="streamTitle" placeholder="Mon incroyable stream...">
     </div>
     <div class="grid-2">
       <div class="form-group">
         <label class="form-label">Date</label>
-        <input class="form-input" type="date">
+        <input class="form-input" id="streamDate" type="date">
       </div>
       <div class="form-group">
         <label class="form-label">Heure de début</label>
-        <input class="form-input" type="time" value="20:00">
+        <input class="form-input" id="streamTime" type="time" value="20:00">
       </div>
     </div>
     <div class="grid-2">
       <div class="form-group">
         <label class="form-label">Jeu</label>
-        <select class="form-select">
+        <select class="form-select" id="streamGame">
           <option>Minecraft</option><option>GTA V RP</option><option>Valorant</option><option>Fortnite</option><option>League of Legends</option><option>Just Chatting</option>
         </select>
       </div>
       <div class="form-group">
         <label class="form-label">Durée prévue</label>
-        <select class="form-select">
+        <select class="form-select" id="streamDuration">
           <option>1h30</option><option>2h00</option><option selected>2h30</option><option>3h00</option><option>3h30</option><option>4h00</option><option>4h30</option><option>5h00</option><option>5h30</option><option>6h00</option>
         </select>
       </div>
     </div>
     <div class="form-group">
       <label class="form-label">Notes</label>
-      <textarea class="form-textarea" placeholder="Objectifs, thèmes, remarques..."></textarea>
+      <textarea class="form-textarea" id="streamNotes" placeholder="Objectifs, thèmes, remarques..."></textarea>
     </div>
     <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:8px;">
       <button class="btn btn-outline" onclick="closeModal('streamModal')">Annuler</button>
-      <button class="btn btn-primary" onclick="saveStream()">📅 Créer le stream</button>
+      <button class="btn btn-primary" id="streamSaveBtn" onclick="saveStream()">📅 Créer le stream</button>
     </div>
   </div>
 </div>
@@ -1479,100 +1262,407 @@
 <div class="notif" id="notifications"></div>
 
 <script>
-// ================= AUTH =================
+// ═══════════════════════════════════════════════════════════
+// CREATIQUE — Script principal
+// ═══════════════════════════════════════════════════════════
+
+// ── LocalStorage DB ──────────────────────────────────────
+const DB = {
+  get: (k, d) => { try { const v = localStorage.getItem('creatique_' + k); return v !== null ? JSON.parse(v) : d; } catch { return d; } },
+  set: (k, v) => { try { localStorage.setItem('creatique_' + k, JSON.stringify(v)); } catch {} }
+};
+
+// ── Données par défaut ────────────────────────────────────
+const DEFAULT_STREAMS = [
+  {id:1, title:'Minecraft SMP Saison 3 – Episode 12', game:'Minecraft', date:'2026-06-13', time:'20:00', duration:'3h00', notes:''},
+  {id:2, title:'Just Chatting – Questions / Réponses', game:'Just Chatting', date:'2026-06-15', time:'17:00', duration:'2h00', notes:''},
+  {id:3, title:'GTA RP – Nouvelle vie en cours', game:'GTA V RP', date:'2026-06-17', time:'21:00', duration:'4h00', notes:''},
+  {id:4, title:'Minecraft SMP – Episode 13', game:'Minecraft', date:'2026-06-27', time:'20:00', duration:'3h00', notes:''},
+  {id:5, title:'Just Chatting – Q&A', game:'Just Chatting', date:'2026-06-30', time:'17:00', duration:'2h00', notes:''},
+];
+const DEFAULT_HISTORY = [
+  {id:1, date:'09/06', title:'GTA RP', planned:'3h00', actual:'3h12', actualMin:192},
+  {id:2, date:'07/06', title:'Minecraft', planned:'2h30', actual:'2h45', actualMin:165},
+  {id:3, date:'05/06', title:'Valorant', planned:'4h00', actual:'2h55', actualMin:175},
+  {id:4, date:'03/06', title:'Just Chat', planned:'2h00', actual:'2h18', actualMin:138},
+  {id:5, date:'01/06', title:'GTA RP', planned:'4h00', actual:'4h02', actualMin:242},
+];
+const DEFAULT_IDEAS = [
+  {id:1, text:'Speedrun Minecraft avec règles du chat', game:'Minecraft', category:'Speedrun', date:'Il y a 2 jours'},
+  {id:2, text:'GTA RP Braquage en solo – tout planifier en direct', game:'GTA RP', category:'Roleplay', date:'Il y a 5 jours'},
+];
+
+// ── État global ───────────────────────────────────────────
+let streams      = DB.get('streams', DEFAULT_STREAMS);
+let timerHistory = DB.get('timerHistory', DEFAULT_HISTORY);
+let savedIdeas   = DB.get('savedIdeas', DEFAULT_IDEAS);
+let profile      = DB.get('profile', {username:'StreamerTest', email:'test@creatique.fr', platform:'Twitch'});
+let userSettings = DB.get('userSettings', {n1:true, n2:true, n3:false, n4:true});
+let nextId       = DB.get('nextId', 10);
+let currentPage  = 'dashboard';
+let editingStreamId = null;
+let calDate      = new Date();  // mois affiché dans le calendrier
+
+// ── Utilitaires ───────────────────────────────────────────
+const MONTHS_FULL  = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+const MONTHS_SHORT = ['Jan','Fév','Mar','Avr','Mai','Juin','Juil','Août','Sep','Oct','Nov','Déc'];
+const WEEKDAYS     = ['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'];
+const WEEKDAY_BADGE = [
+  {label:'Dimanche', cls:'badge-green'},{label:'Lundi', cls:'badge-purple'},
+  {label:'Mardi', cls:'badge-yellow'},{label:'Mercredi', cls:'badge-purple'},
+  {label:'Jeudi', cls:'badge-purple'},{label:'Vendredi', cls:'badge-purple'},
+  {label:'Samedi', cls:'badge-green'},
+];
+
+function initials(name) {
+  return (name || 'ST').split(/\s+/).map(w => w[0]).join('').toUpperCase().substring(0, 2) || 'ST';
+}
+
+function todayMidnight() {
+  const d = new Date(); d.setHours(0,0,0,0); return d;
+}
+
+function parseDateStr(s) {
+  const [y,m,d] = s.split('-').map(Number);
+  return new Date(y, m-1, d);
+}
+
+function formatDateStr(s) {
+  const dt = parseDateStr(s);
+  return {day: dt.getDate(), month: MONTHS_SHORT[dt.getMonth()], fullMonth: MONTHS_FULL[dt.getMonth()], weekday: WEEKDAYS[dt.getDay()], year: dt.getFullYear(), dt};
+}
+
+function daysUntil(dateStr) {
+  const diff = parseDateStr(dateStr) - todayMidnight();
+  return Math.ceil(diff / 86400000);
+}
+
+function fmtMinutes(min) {
+  const h = Math.floor(min/60), m = min%60;
+  return (h > 0 ? h+'h' : '') + (m > 0 ? String(m).padStart(h>0?2:1,'0')+'min' : (h===0?'0min':''));
+}
+
+function parseMinutes(str) {
+  const h = (str.match(/(\d+)h/) || [])[1] || 0;
+  const m = (str.match(/(\d+)min/) || [])[1] || 0;
+  return parseInt(h)*60 + parseInt(m);
+}
+
+// ── AUTH ──────────────────────────────────────────────────
 function switchAuthTab(tab, el) {
   document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
   el.classList.add('active');
-  document.getElementById('loginForm').style.display = tab === 'login' ? 'block' : 'none';
+  document.getElementById('loginForm').style.display  = tab === 'login'    ? 'block' : 'none';
   document.getElementById('registerForm').style.display = tab === 'register' ? 'block' : 'none';
 }
 
 function loginUser() {
-  document.getElementById('authPage').style.display = 'none';
-  document.getElementById('appShell').style.display = 'flex';
-  notify('Bienvenue sur StreamHub ! 🎮', 'success');
+  const nameInput  = document.querySelector('#registerForm input[type=text]');
+  const emailInput = document.querySelector('#loginForm input[type=email]');
+  if (nameInput && nameInput.value.trim())  profile.username = nameInput.value.trim();
+  if (emailInput && emailInput.value.trim()) profile.email   = emailInput.value.trim();
+  DB.set('profile', profile);
+  DB.set('authed', true);
+  showApp();
 }
 
-// ================= NAVIGATION =================
+function showApp() {
+  document.getElementById('authPage').style.display  = 'none';
+  document.getElementById('appShell').style.display  = 'flex';
+  applyProfile();
+  navigate('dashboard', null);
+  notify('Bienvenue sur Créatique ! 🎮', 'success');
+}
+
+function logout() {
+  DB.set('authed', false);
+  document.getElementById('authPage').style.display  = 'flex';
+  document.getElementById('appShell').style.display  = 'none';
+}
+
+function applyProfile() {
+  const av = document.getElementById('userAvatar');
+  if (av) av.textContent = initials(profile.username);
+  const pa = document.getElementById('profileAvatarText');
+  if (pa) pa.textContent = initials(profile.username);
+}
+
+// ── NAVIGATION ────────────────────────────────────────────
 const pageNames = {
-  dashboard: 'Dashboard', agenda: 'Agenda', timer: 'Horodateur',
-  prep: 'Préparation de stream', ideas: 'Générateur d\'idées', videos: 'Gestion des vidéos',
-  subtitles: 'Sous-titres automatiques', library: 'Bibliothèque', ai: 'Intelligence IA', settings: 'Paramètres'
+  dashboard:'Dashboard', agenda:'Agenda', timer:'Horodateur',
+  prep:'Préparation de stream', ideas:'Générateur d\'idées', videos:'Gestion des vidéos',
+  subtitles:'Sous-titres automatiques', library:'Bibliothèque', ai:'Intelligence IA', settings:'Paramètres'
 };
 
 function navigate(page, navEl) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-  document.getElementById('page-' + page).classList.add('active');
-  if (navEl) navEl.classList.add('active');
-  else {
+  const pageEl = document.getElementById('page-' + page);
+  if (pageEl) pageEl.classList.add('active');
+  if (navEl) {
+    navEl.classList.add('active');
+  } else {
     document.querySelectorAll('.nav-item').forEach(n => {
-      if (n.getAttribute('onclick') && n.getAttribute('onclick').includes("'" + page + "'")) n.classList.add('active');
+      if ((n.getAttribute('onclick') || '').includes("'" + page + "'")) n.classList.add('active');
     });
   }
   document.getElementById('topbarTitle').textContent = pageNames[page] || page;
+  currentPage = page;
+  if (page === 'dashboard') renderDashboard();
+  if (page === 'agenda')    { renderCalendar(); renderAgendaList(); }
+  if (page === 'ideas')     renderSavedIdeas();
+  if (page === 'settings')  applySettings();
+  if (page === 'timer')     renderTimerHistory();
+  if (page === 'library')   renderLibrary();
 }
 
-// ================= SIDEBAR =================
+// ── SIDEBAR ───────────────────────────────────────────────
 let sidebarOpen = false;
 function toggleSidebar() {
   sidebarOpen = !sidebarOpen;
-  const sb = document.getElementById('sidebar');
-  const main = document.getElementById('mainContent');
-  const logo = document.getElementById('sidebarLogo');
-  const icon = document.getElementById('toggleIcon');
-  sb.classList.toggle('expanded', sidebarOpen);
-  main.classList.toggle('expanded', sidebarOpen);
-  logo.textContent = sidebarOpen ? 'StreamHub' : 'SH';
-  icon.textContent = sidebarOpen ? '◀' : '▶';
+  document.getElementById('sidebar').classList.toggle('expanded', sidebarOpen);
+  document.getElementById('mainContent').classList.toggle('expanded', sidebarOpen);
+  const img = document.getElementById('sidebarLogoImg');
+  if (img) img.className = sidebarOpen ? 'logo-full' : 'logo-icon';
+  document.getElementById('toggleIcon').textContent = sidebarOpen ? '◀' : '▶';
 }
 
-// ================= TIMER =================
+// ── DASHBOARD ─────────────────────────────────────────────
+function renderDashboard() {
+  const today = todayMidnight();
+  const upcoming = streams
+    .filter(s => parseDateStr(s.date) >= today)
+    .sort((a,b) => a.date.localeCompare(b.date));
+
+  // Prochaine stream card
+  const next = upcoming[0];
+  const card = document.getElementById('dashNextCard');
+  if (next && card) {
+    const d = daysUntil(next.date);
+    const fmt = formatDateStr(next.date);
+    const cd = d === 0 ? '🔴 Aujourd\'hui !' : d === 1 ? '🔴 Demain !' : `🔴 Prochain stream dans ${d} jour${d>1?'s':''}`;
+    document.getElementById('dashCountdown').textContent = cd;
+    document.getElementById('dashNextTitle').textContent = next.title;
+    document.getElementById('dashNextMeta').innerHTML =
+      `<span>📅 ${fmt.weekday} ${fmt.day} ${fmt.fullMonth} ${fmt.year}</span>
+       <span>⏰ ${next.time}</span><span>⏱️ ${next.duration}</span><span>🎮 ${next.game}</span>`;
+  } else if (card) {
+    document.getElementById('dashCountdown').textContent = '📅 Aucun stream planifié';
+    document.getElementById('dashNextTitle').textContent = 'Créez votre premier stream !';
+    document.getElementById('dashNextMeta').innerHTML = '';
+  }
+
+  // Stats
+  const totalMin = timerHistory.reduce((s, h) => s + (h.actualMin || 0), 0);
+  const th = Math.floor(totalMin/60), tm = totalMin%60;
+  document.getElementById('statStreams').textContent  = timerHistory.length;
+  document.getElementById('statTime').textContent     = th + 'h' + String(tm).padStart(2,'0');
+  document.getElementById('statPlanned').textContent  = upcoming.length;
+  document.getElementById('statIdeas').textContent    = savedIdeas.length;
+
+  // Prochains streams
+  const el = document.getElementById('dashUpcoming');
+  if (el) {
+    el.innerHTML = upcoming.slice(0,3).map(s => {
+      const fmt = formatDateStr(s.date);
+      const badge = WEEKDAY_BADGE[parseDateStr(s.date).getDay()];
+      return `<div class="activity-item">
+        <div class="activity-icon" style="background:var(--primary-dim);font-size:14px;font-weight:700;font-family:'Space Grotesk',sans-serif;color:var(--primary)">${fmt.day}</div>
+        <div class="activity-info">
+          <div class="activity-name">${s.title}</div>
+          <div class="activity-date">${fmt.weekday} ${s.time} · ${s.duration} · ${s.game}</div>
+        </div>
+        <div class="card-badge ${badge.cls}">${badge.label}</div>
+      </div>`;
+    }).join('') || '<div class="empty-state"><div class="es-icon">📅</div><p>Aucun stream planifié</p></div>';
+  }
+}
+
+// ── CALENDRIER ────────────────────────────────────────────
+function renderCalendar() {
+  document.getElementById('calMonthTitle').textContent = MONTHS_FULL[calDate.getMonth()] + ' ' + calDate.getFullYear();
+  const grid   = document.getElementById('calGrid');
+  grid.querySelectorAll('.cal-day').forEach(el => el.remove());
+  const year   = calDate.getFullYear(), month = calDate.getMonth();
+  const first  = new Date(year, month, 1).getDay();
+  const offset = first === 0 ? 6 : first - 1;
+  const days   = new Date(year, month+1, 0).getDate();
+  const today  = todayMidnight();
+
+  for (let i = 0; i < offset; i++) {
+    const el = document.createElement('div');
+    el.className = 'cal-day'; el.style.opacity = '.15';
+    grid.appendChild(el);
+  }
+  for (let d = 1; d <= days; d++) {
+    const el      = document.createElement('div');
+    el.className  = 'cal-day';
+    const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const dt      = new Date(year, month, d);
+    if (dt.getTime() === today.getTime()) el.classList.add('today');
+    const dayStreams = streams.filter(s => s.date === dateStr);
+    if (dayStreams.length) el.classList.add('has-stream');
+    el.innerHTML = `<div class="cal-day-num">${d}</div>`;
+    dayStreams.forEach(s => {
+      const badge = document.createElement('div');
+      badge.className = 'cal-event green';
+      badge.textContent = (s.title.length > 9 ? s.title.substring(0,9)+'…' : s.title) + ' ' + s.time;
+      badge.onclick = e => { e.stopPropagation(); openStreamModal(s.id); };
+      el.appendChild(badge);
+    });
+    el.onclick = e => { if (!e.target.classList.contains('cal-event')) openStreamModal(null, dateStr); };
+    grid.appendChild(el);
+  }
+}
+
+function prevMonth()  { calDate.setMonth(calDate.getMonth()-1); renderCalendar(); }
+function nextMonth()  { calDate.setMonth(calDate.getMonth()+1); renderCalendar(); }
+function goToday()    { calDate = new Date(); renderCalendar(); }
+
+// ── AGENDA LIST ───────────────────────────────────────────
+function renderAgendaList() {
+  const el = document.getElementById('agendaStreamList');
+  if (!el) return;
+  const today = todayMidnight();
+  const upcoming = streams.filter(s => parseDateStr(s.date) >= today).sort((a,b) => a.date.localeCompare(b.date));
+  const badge = document.querySelector('#page-agenda .card-badge.badge-purple');
+  if (badge) badge.textContent = upcoming.length + ' stream' + (upcoming.length !== 1 ? 's' : '');
+  el.innerHTML = upcoming.length ? upcoming.map(s => {
+    const fmt = formatDateStr(s.date);
+    return `<div class="stream-row">
+      <div class="stream-row-date"><div class="sr-day">${fmt.day}</div><div class="sr-month">${fmt.month}</div></div>
+      <div class="stream-row-info">
+        <div class="sr-title">${s.title}</div>
+        <div class="sr-meta"><span>⏰ ${s.time}</span><span>⏱️ ${s.duration}</span><span>🎮 ${s.game}</span></div>
+      </div>
+      <div class="stream-row-actions">
+        <button class="btn btn-outline btn-sm" onclick="openStreamModal(${s.id})" title="Modifier">✏️</button>
+        <button class="btn btn-outline btn-sm" onclick="prepStream(${s.id})" title="Préparer">📋</button>
+        <button class="btn btn-danger btn-sm"  onclick="deleteStream(${s.id})" title="Supprimer">🗑️</button>
+      </div>
+    </div>`;
+  }).join('') : '<div class="empty-state"><div class="es-icon">📅</div><p>Aucun stream planifié. Créez votre premier stream !</p></div>';
+}
+
+// ── STREAM CRUD ───────────────────────────────────────────
+function openStreamModal(editId = null, presetDate = null) {
+  editingStreamId = editId;
+  const title = document.getElementById('streamModalTitle');
+  const saveBtn = document.getElementById('streamSaveBtn');
+  if (editId) {
+    const s = streams.find(x => x.id === editId);
+    if (!s) return;
+    title.textContent = '✏️ Modifier le stream';
+    if (saveBtn) saveBtn.textContent = '💾 Enregistrer';
+    document.getElementById('streamTitle').value    = s.title;
+    document.getElementById('streamDate').value     = s.date;
+    document.getElementById('streamTime').value     = s.time;
+    document.getElementById('streamGame').value     = s.game;
+    document.getElementById('streamDuration').value = s.duration;
+    document.getElementById('streamNotes').value    = s.notes || '';
+  } else {
+    title.textContent = '📅 Nouveau stream';
+    if (saveBtn) saveBtn.textContent = '📅 Créer le stream';
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('streamTitle').value    = '';
+    document.getElementById('streamDate').value     = presetDate || today;
+    document.getElementById('streamTime').value     = '20:00';
+    document.getElementById('streamGame').value     = 'Minecraft';
+    document.getElementById('streamDuration').value = '2h30';
+    document.getElementById('streamNotes').value    = '';
+  }
+  openModal('streamModal');
+}
+
+function saveStream() {
+  const titleVal = document.getElementById('streamTitle').value.trim();
+  if (!titleVal) { notify('Veuillez saisir un titre pour le stream.', 'warning'); return; }
+  const s = {
+    id:       editingStreamId || nextId++,
+    title:    titleVal,
+    game:     document.getElementById('streamGame').value,
+    date:     document.getElementById('streamDate').value,
+    time:     document.getElementById('streamTime').value,
+    duration: document.getElementById('streamDuration').value,
+    notes:    document.getElementById('streamNotes').value,
+  };
+  if (editingStreamId) {
+    const idx = streams.findIndex(x => x.id === editingStreamId);
+    if (idx >= 0) streams[idx] = s;
+    notify('Stream mis à jour ! ✏️', 'success');
+  } else {
+    streams.push(s);
+    notify('Stream créé et ajouté à l\'agenda ! 📅', 'success');
+  }
+  DB.set('streams', streams);
+  DB.set('nextId', nextId);
+  closeModal('streamModal');
+  renderDashboard();
+  if (currentPage === 'agenda') { renderCalendar(); renderAgendaList(); }
+}
+
+function deleteStream(id) {
+  if (!confirm('Supprimer ce stream ?')) return;
+  streams = streams.filter(s => s.id !== id);
+  DB.set('streams', streams);
+  renderDashboard();
+  renderCalendar(); renderAgendaList();
+  notify('Stream supprimé.', 'info');
+}
+
+function prepStream(id) {
+  const s = streams.find(x => x.id === id);
+  if (s) {
+    const inp = document.querySelector('#page-prep .form-input');
+    if (inp) inp.value = s.title;
+  }
+  navigate('prep', null);
+}
+
+// ── TIMER ─────────────────────────────────────────────────
 let timerInterval = null, timerRunning = false, timerPaused = false;
 let timerSeconds = 0, timerDuration = 150 * 60;
 
 function setDuration(min, el) {
   document.querySelectorAll('.dur-btn').forEach(b => b.classList.remove('active'));
-  if(el) el.classList.add('active');
+  if (el) el.classList.add('active');
   timerDuration = min * 60;
   const h = Math.floor(min/60), m = min%60;
-  document.getElementById('timerTarget').textContent = (h > 0 ? h+'h' : '') + (m > 0 ? (m < 10 && h > 0 ? '0'+m : m)+'min' : '') + ' prévues';
-  document.getElementById('timerRemaining').textContent = (h > 0 ? h+'h' : '') + (m > 0 ? (m < 10 && h > 0 ? '0'+m : m)+'min' : '') + ' restantes';
-  document.getElementById('tStatRemaining').textContent = (h > 0 ? h+':' : '') + (m < 10 ? '0' : '') + m;
+  const fmt = (h>0?h+'h':'') + (m>0?(m<10&&h>0?'0'+m:m)+'min':'');
+  document.getElementById('timerTarget').textContent    = fmt + ' prévues';
+  document.getElementById('timerRemaining').textContent = fmt + ' restantes';
+  document.getElementById('tStatRemaining').textContent = (h>0?h+':':'') + String(m).padStart(2,'0');
 }
 
 function fmtTime(s) {
   const h = Math.floor(s/3600), m = Math.floor((s%3600)/60), sec = s%60;
-  return (h<10?'0':'')+h+':'+(m<10?'0':'')+m+':'+(sec<10?'0':'')+sec;
+  return String(h).padStart(2,'0')+':'+String(m).padStart(2,'0')+':'+String(sec).padStart(2,'0');
+}
+
+function timerTick() {
+  timerSeconds++;
+  document.getElementById('timerDisplay').textContent = fmtTime(timerSeconds);
+  const pct = Math.min((timerSeconds/timerDuration)*100, 100);
+  document.getElementById('timerProgress').style.width = pct + '%';
+  const h = Math.floor(timerSeconds/3600), m = Math.floor((timerSeconds%3600)/60);
+  document.getElementById('tStatElapsed').textContent   = (h>0?h+':':'') + String(m).padStart(2,'0');
+  document.getElementById('tStatPercent').textContent   = Math.floor(pct) + '%';
+  const rem = Math.max(timerDuration - timerSeconds, 0);
+  const rh = Math.floor(rem/3600), rm = Math.floor((rem%3600)/60);
+  document.getElementById('tStatRemaining').textContent = (rh>0?rh+':':'') + String(rm).padStart(2,'0');
+  document.getElementById('timerElapsed').textContent   = Math.floor(timerSeconds/60) + ' min écoulées';
+  document.getElementById('timerRemaining').textContent = Math.floor(rem/60) + ' min restantes';
+  if (timerSeconds === timerDuration) notify('⏱️ Temps prévu atteint ! Continuez ou arrêtez le stream.', 'info');
 }
 
 function timerStart() {
   if (timerRunning && !timerPaused) return;
   timerRunning = true; timerPaused = false;
-  document.getElementById('timerStartBtn').style.opacity = '.4';
-  document.getElementById('timerStartBtn').style.pointerEvents = 'none';
-  document.getElementById('timerPauseBtn').style.opacity = '1';
-  document.getElementById('timerPauseBtn').style.pointerEvents = 'all';
-  document.getElementById('timerStopBtn').style.opacity = '1';
-  document.getElementById('timerStopBtn').style.pointerEvents = 'all';
+  document.getElementById('timerStartBtn').style.cssText = 'opacity:.4;pointer-events:none';
+  document.getElementById('timerPauseBtn').style.cssText = 'opacity:1;pointer-events:all';
+  document.getElementById('timerStopBtn').style.cssText  = 'opacity:1;pointer-events:all';
   document.getElementById('liveIndicator').style.display = 'flex';
-  timerInterval = setInterval(() => {
-    timerSeconds++;
-    document.getElementById('timerDisplay').textContent = fmtTime(timerSeconds);
-    const pct = Math.min((timerSeconds / timerDuration) * 100, 100);
-    document.getElementById('timerProgress').style.width = pct + '%';
-    const h = Math.floor(timerSeconds/3600), m = Math.floor((timerSeconds%3600)/60);
-    document.getElementById('tStatElapsed').textContent = (h>0?h+':':'')+(m<10?'0':'')+m;
-    document.getElementById('tStatPercent').textContent = Math.floor(pct) + '%';
-    const rem = Math.max(timerDuration - timerSeconds, 0);
-    const rh = Math.floor(rem/3600), rm = Math.floor((rem%3600)/60);
-    document.getElementById('tStatRemaining').textContent = (rh>0?rh+':':'')+(rm<10?'0':'')+rm;
-    const elapsed = timerSeconds, el = (Math.floor(elapsed/60));
-    document.getElementById('timerElapsed').textContent = el + ' min écoulées';
-    const remMin = Math.floor(rem/60);
-    document.getElementById('timerRemaining').textContent = remMin + ' min restantes';
-    if (timerSeconds >= timerDuration) { notify('⏱️ Temps prévu atteint ! Continuez ou arrêtez le stream.', 'info'); }
-  }, 1000);
+  timerInterval = setInterval(timerTick, 1000);
 }
 
 function timerPause() {
@@ -1588,35 +1678,61 @@ function timerPause() {
 }
 
 function timerStop() {
-  clearInterval(timerInterval); timerRunning = false; timerPaused = false;
-  timerSeconds = 0;
-  document.getElementById('timerDisplay').textContent = '00:00:00';
-  document.getElementById('timerProgress').style.width = '0%';
-  document.getElementById('timerStartBtn').style.opacity = '1';
-  document.getElementById('timerStartBtn').style.pointerEvents = 'all';
-  document.getElementById('timerPauseBtn').style.opacity = '.4';
-  document.getElementById('timerPauseBtn').style.pointerEvents = 'none';
-  document.getElementById('timerStopBtn').style.opacity = '.4';
-  document.getElementById('timerStopBtn').style.pointerEvents = 'none';
+  if (!timerRunning && timerSeconds === 0) return;
+  clearInterval(timerInterval);
+
+  if (timerSeconds > 0) {
+    const now = new Date();
+    const dateStr = String(now.getDate()).padStart(2,'0') + '/' + String(now.getMonth()+1).padStart(2,'0');
+    const plannedMin = Math.round(timerDuration/60);
+    const actualMin  = Math.round(timerSeconds/60);
+    const inp = document.querySelector('#page-prep .form-input');
+    const title = inp && inp.value.trim() ? inp.value.trim() : 'Stream';
+    timerHistory.unshift({
+      id: Date.now(), date: dateStr, title,
+      planned: fmtMinutes(plannedMin), actual: fmtMinutes(actualMin), actualMin,
+    });
+    if (timerHistory.length > 20) timerHistory = timerHistory.slice(0, 20);
+    DB.set('timerHistory', timerHistory);
+    renderTimerHistory();
+    renderDashboard();
+  }
+
+  timerRunning = false; timerPaused = false; timerSeconds = 0;
+  document.getElementById('timerDisplay').textContent   = '00:00:00';
+  document.getElementById('timerProgress').style.width  = '0%';
+  document.getElementById('timerStartBtn').style.cssText = 'opacity:1;pointer-events:all';
+  document.getElementById('timerPauseBtn').style.cssText = 'opacity:.4;pointer-events:none';
+  document.getElementById('timerStopBtn').style.cssText  = 'opacity:.4;pointer-events:none';
+  document.getElementById('timerPauseBtn').textContent   = '⏸';
   document.getElementById('liveIndicator').style.display = 'none';
-  document.getElementById('timerPauseBtn').textContent = '⏸';
+  document.getElementById('tStatElapsed').textContent    = '0:00';
+  document.getElementById('tStatPercent').textContent    = '0%';
   notify('Stream terminé ! Session sauvegardée dans l\'historique.', 'success');
 }
 
-// ================= MODAL =================
-function openModal(id) {
-  document.getElementById(id).classList.add('open');
+function renderTimerHistory() {
+  const tbody = document.getElementById('timerHistoryTbody');
+  if (!tbody) return;
+  const badge = document.querySelector('#page-timer .card-badge.badge-purple');
+  if (badge) badge.textContent = timerHistory.length + ' session' + (timerHistory.length!==1?'s':'');
+  tbody.innerHTML = timerHistory.slice(0,10).map(h => {
+    const ok = h.actualMin >= parseMinutes(h.planned);
+    return `<tr>
+      <td>${h.date}</td><td>${h.title}</td><td>${h.planned}</td>
+      <td style="color:${ok?'var(--accent)':'var(--danger)'}">${h.actual}</td>
+    </tr>`;
+  }).join('') || '<tr><td colspan="4" style="text-align:center;color:var(--text2);padding:16px">Aucune session enregistrée</td></tr>';
 }
+
+// ── MODAL ─────────────────────────────────────────────────
+function openModal(id) { document.getElementById(id).classList.add('open'); }
 function closeModal(id) {
   document.getElementById(id).classList.remove('open');
+  if (id === 'streamModal') editingStreamId = null;
 }
 
-function saveStream() {
-  closeModal('streamModal');
-  notify('Stream créé et ajouté à l\'agenda ! 📅', 'success');
-}
-
-// ================= FORMATS =================
+// ── FORMATS ───────────────────────────────────────────────
 function selectFormat(el) {
   document.querySelectorAll('.format-card').forEach(c => c.classList.remove('active'));
   el.classList.add('active');
@@ -1625,49 +1741,19 @@ function selectFormat(el) {
 function selectPlatform(el) {
   document.querySelectorAll('.platform-item').forEach(p => p.classList.remove('active'));
   el.classList.add('active');
+  profile.platform = el.textContent.trim();
+  DB.set('profile', profile);
 }
 
-// ================= IA =================
-const aiTitles = {
-  minecraft: ['🏆 J\'AI CONSTRUIT LE PLUS GRAND CHÂTEAU MINECRAFT EN 6H | LIVE !','⚔️ ON SURVIT 24H EN HARDCORE ? Le défi impossible...','🔥 MINECRAFT SMP SAISON 3 – Le donjon maudit est pour ce soir !'],
-  valorant: ['🎯 RANKED VALORANT | MONTÉE VERS RADIANT – Épisode 5','💥 10 ACE EN LIVE ? Le défi impossible avec les subs !','🔫 VALORANT CUSTOM GAMES AVEC VOUS | !join pour participer'],
-  default: ['🔥 LE MEILLEUR STREAM DE MA VIE – Ne ratez pas ça !','⚡ LIVE EXCEPTIONNEL | Objectif record de viewers ce soir !','🎮 NOUVEAU JEU, NOUVELLES SENSATIONS | Live en direct !']
-};
-
-const aiDescriptions = [`🎮 Bienvenue sur mon stream ! Aujourd'hui on plonge dans une session épique.\n\n📌 Programme :\n• Warm-up rapide\n• Défi communautaire\n• Sessions ranked\n• Fin de stream avec Q&A\n\n💬 N'hésitez pas à interagir dans le chat, toutes les questions sont les bienvenues !\n\n📲 Retrouvez-moi sur TikTok et Instagram pour les meilleurs clips.\n\n🔔 Abonnez-vous pour ne rater aucune session !`];
-
-const aiHashtags = ['#minecraft #gaming #stream #twitch #live #gameplay #gamer #fyp #viral #twitch #streamer #clip #highlight #FR #francais #gamingfr #contentcreator #foryou'];
-
-function generateAIContent(type) {
-  if (type === 'titles') {
-    const val = document.getElementById('aiTitleInput').value.toLowerCase();
-    const titles = aiTitles[val] || aiTitles.default;
-    const el = document.getElementById('aiTitlesResult');
-    el.style.display = 'block';
-    el.innerHTML = titles.map(t => `<div style="padding:8px 0; border-bottom:1px solid var(--border); cursor:pointer;" onclick="notify('Titre copié dans le presse-papiers !','success')">${t}</div>`).join('');
-    notify('3 titres générés !', 'success');
-  } else if (type === 'description') {
-    const el = document.getElementById('aiDescResult');
-    el.style.display = 'block';
-    el.innerHTML = `<pre style="white-space:pre-wrap; font-family:'Inter',sans-serif;">${aiDescriptions[0]}</pre>`;
-    notify('Description générée !', 'success');
-  } else if (type === 'hashtags') {
-    const el = document.getElementById('aiHashResult');
-    el.style.display = 'block';
-    el.innerHTML = `<div style="line-height:2;">${aiHashtags[0].split(' ').map(h => `<span style="background:var(--primary-dim); color:var(--primary); padding:3px 8px; border-radius:10px; margin:2px; display:inline-block; font-size:12px;">${h}</span>`).join('')}</div>`;
-    notify('Hashtags générés !', 'success');
-  }
-}
-
-// ================= IDEAS =================
+// ── IDEAS ─────────────────────────────────────────────────
 const ideaPool = [
   "Construire une ville entière en survie, un quartier par stream – le chat nomme chaque quartier",
   "Speedrun avec des règles aléatoires imposées par le chat toutes les 10 minutes",
   "Recréer un monument mondial célèbre, voté par le chat en début de stream",
   "Survie hardcore avec des vies bonus gagnées grâce aux abonnements",
-  "Challenge : terminer le jeu en mode facile... en utilisant uniquement un instrument de musique",
+  "Challenge : terminer le jeu en mode facile avec uniquement un instrument de musique",
   "Construction en compétition contre un viewer tiré au sort en début de live",
-  "Jeu en miroir : tout se passe en sens inverse (contrôles inversés, carte miroir)",
+  "Jeu en miroir : contrôles inversés, guidé uniquement par le chat",
   "Stream blindfolded : jouer sans voir l'écran, guidé uniquement par le chat",
   "Un stream entier en rôleplay avec un personnage créé par le chat en live",
   "Défi : finir le jeu le plus vite possible, chaque mort = un gage demandé par le chat"
@@ -1678,22 +1764,22 @@ function generateIdeas() {
   btn.innerHTML = '<span class="spinner"></span> Génération...';
   btn.disabled = true;
   setTimeout(() => {
-    btn.innerHTML = '⚡ Générer 10 idées';
-    btn.disabled = false;
+    btn.innerHTML = '⚡ Générer 10 idées'; btn.disabled = false;
     const game = document.getElementById('ideaGame').value;
-    const cat = document.getElementById('ideaCategory').value;
+    const cat  = document.getElementById('ideaCategory').value;
     const container = document.getElementById('ideasContainer');
     container.innerHTML = '';
-    const shuffled = [...ideaPool].sort(() => Math.random() - .5);
-    shuffled.forEach((idea, i) => {
+    [...ideaPool].sort(() => Math.random()-.5).forEach((idea, i) => {
+      const text = idea.replace('le jeu', game);
       const card = document.createElement('div');
       card.className = 'idea-card';
+      const textEsc = text.replace(/'/g, "\\'").replace(/`/g, '\\`');
       card.innerHTML = `<div class="idea-num">Idée ${String(i+1).padStart(2,'0')}</div>
         <div class="idea-category-badge">${cat}</div>
-        <p>${idea.replace('le jeu', game)}</p>
+        <p>${text}</p>
         <div class="idea-actions">
-          <button class="btn btn-outline btn-sm" onclick="saveIdea(this)">💾 Sauvegarder</button>
-          <button class="btn btn-ghost btn-sm">📋 Utiliser</button>
+          <button class="btn btn-outline btn-sm" onclick="saveIdeaCard(this,'${game}','${cat}',\`${textEsc}\`)">💾 Sauvegarder</button>
+          <button class="btn btn-ghost btn-sm"   onclick="useIdea(\`${textEsc}\`)">📋 Utiliser</button>
         </div>`;
       container.appendChild(card);
     });
@@ -1701,36 +1787,210 @@ function generateIdeas() {
   }, 1200);
 }
 
-function saveIdea(btn) {
-  const card = btn.closest('.idea-card');
-  card.classList.add('saved');
-  btn.className = 'btn btn-green btn-sm';
-  btn.textContent = '✅ Sauvegardé';
+function saveIdeaCard(btn, game, category, text) {
+  btn.closest('.idea-card').classList.add('saved');
+  btn.className = 'btn btn-green btn-sm'; btn.textContent = '✅ Sauvegardé'; btn.disabled = true;
+  savedIdeas.unshift({id: Date.now(), text, game, category, date: 'À l\'instant'});
+  DB.set('savedIdeas', savedIdeas);
+  renderSavedIdeas(); renderDashboard();
   notify('Idée sauvegardée dans votre collection !', 'success');
 }
 
-// ================= SUBTITLES =================
+function useIdea(text) {
+  navigate('agenda', null);
+  setTimeout(() => { openStreamModal(null); document.getElementById('streamTitle').value = text.substring(0, 80); }, 100);
+}
+
+function deleteIdea(id) {
+  savedIdeas = savedIdeas.filter(i => i.id !== id);
+  DB.set('savedIdeas', savedIdeas);
+  renderSavedIdeas(); renderDashboard();
+  notify('Idée supprimée.', 'info');
+}
+
+function renderSavedIdeas() {
+  const el = document.getElementById('savedIdeasList');
+  if (!el) return;
+  const badge = document.querySelector('#page-ideas .card-badge.badge-green');
+  if (badge) badge.textContent = savedIdeas.length + ' idée' + (savedIdeas.length!==1?'s':'');
+  el.innerHTML = savedIdeas.length ? savedIdeas.map(idea => {
+    const textEsc = (idea.text||'').replace(/'/g,"\\'").replace(/`/g,'\\`');
+    return `<div class="activity-item">
+      <div class="activity-icon" style="background:var(--accent-dim)">💡</div>
+      <div class="activity-info">
+        <div class="activity-name">${(idea.text||'').substring(0,60)}${(idea.text||'').length>60?'…':''}</div>
+        <div class="activity-date">${idea.date} · ${idea.game} · ${idea.category}</div>
+      </div>
+      <div style="display:flex;gap:6px;flex-shrink:0">
+        <button class="btn btn-ghost btn-sm" onclick="useIdea(\`${textEsc}\`)">📋 Utiliser</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteIdea(${idea.id})">🗑️</button>
+      </div>
+    </div>`;
+  }).join('') : '<div class="empty-state"><div class="es-icon">💡</div><p>Aucune idée sauvegardée</p></div>';
+}
+
+// ── IA ────────────────────────────────────────────────────
+const aiTitles = {
+  minecraft: ['🏆 J\'AI CONSTRUIT LE PLUS GRAND CHÂTEAU EN 6H | LIVE !','⚔️ ON SURVIT 24H EN HARDCORE ? Le défi impossible...','🔥 MINECRAFT SMP – Le donjon maudit est pour ce soir !'],
+  valorant:  ['🎯 RANKED VALORANT | MONTÉE VERS RADIANT – Épisode 5','💥 10 ACE EN LIVE ? Le défi impossible avec les subs !','🔫 VALORANT CUSTOM GAMES AVEC VOUS | !join pour participer'],
+  gta:       ['🚗 GTA RP – NOUVELLE VIE | Épisode 8','💰 LE BRAQUAGE DU SIÈCLE EN LIVE | GTA V RP','👮 NOUVELLE CARRIÈRE DE FLIC | GTA RP #12'],
+  chatting:  ['💬 Q&A avec vous ! Posez toutes vos questions 🎤','🎉 STREAM SPÉCIAL – Avec des cadeaux !','😂 LES MOMENTS LES PLUS DRÔLES DE MON STREAM'],
+  default:   ['🔥 LE MEILLEUR STREAM DE MA VIE – Ne ratez pas ça !','⚡ LIVE EXCEPTIONNEL | Objectif record de viewers !','🎮 NOUVEAU JEU, NOUVELLES SENSATIONS | Live en direct !'],
+};
+const aiDesc = `🎮 Bienvenue sur mon stream ! Aujourd'hui on plonge dans une session épique.\n\n📌 Programme :\n• Warm-up rapide\n• Défi communautaire\n• Sessions ranked\n• Fin de stream avec Q&A\n\n💬 N'hésitez pas à interagir dans le chat !\n\n📲 Retrouvez-moi sur TikTok et Instagram pour les meilleurs clips.\n\n🔔 Abonnez-vous pour ne rater aucune session !`;
+const aiHashtags = {
+  tiktok: '#gaming #stream #twitch #live #gameplay #gamer #fyp #viral #streamer #clip #FR #gamingfr #contentcreator #foryou #pourtoi',
+  shorts: '#Shorts #Gaming #GamingShorts #Stream #Highlight #Clip #GameClip #Twitch #YouTube #GamingFR',
+  reels:  '#reels #gaming #streamer #twitch #youtube #clip #gameplay #gamingfr #highlight #viral',
+};
+
+function generateAIContent(type) {
+  if (type === 'titles') {
+    const val = (document.getElementById('aiTitleInput').value || '').toLowerCase();
+    const key = val.includes('minecraft')?'minecraft':val.includes('valorant')?'valorant':val.includes('gta')?'gta':val.includes('chat')?'chatting':'default';
+    const titles = aiTitles[key];
+    const el = document.getElementById('aiTitlesResult');
+    el.style.display = 'block';
+    el.innerHTML = titles.map(t => {
+      const esc = t.replace(/`/g,'\\`');
+      return `<div style="padding:10px 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;gap:10px;">
+        <span>${t}</span>
+        <button class="btn btn-outline btn-sm" onclick="copyText(\`${esc}\`,this)" style="flex-shrink:0">📋</button>
+      </div>`;
+    }).join('');
+    notify('3 titres générés !', 'success');
+  } else if (type === 'description') {
+    const el = document.getElementById('aiDescResult');
+    el.style.display = 'block';
+    el.innerHTML = `<pre style="white-space:pre-wrap;font-family:'Inter',sans-serif">${aiDesc}</pre>
+      <button class="btn btn-outline btn-sm" style="margin-top:10px" onclick="copyText(\`${aiDesc.replace(/`/g,'\\`')}\`,this)">📋 Copier</button>`;
+    notify('Description générée !', 'success');
+  } else if (type === 'hashtags') {
+    const activeTab = document.querySelector('#page-ai .ai-tool-card:last-of-type .platform-tab.active');
+    const platform  = activeTab ? activeTab.textContent.toLowerCase().trim() : 'tiktok';
+    const key = platform.includes('short') ? 'shorts' : platform.includes('reel') ? 'reels' : 'tiktok';
+    const tags = aiHashtags[key];
+    const el = document.getElementById('aiHashResult');
+    el.style.display = 'block';
+    el.innerHTML = `<div style="line-height:2.2">${tags.split(' ').map(h =>
+      `<span style="background:var(--primary-dim);color:var(--primary);padding:3px 8px;border-radius:10px;margin:2px;display:inline-block;font-size:12px;cursor:pointer" onclick="copyText('${h}',this)">${h}</span>`
+    ).join('')}</div>
+    <button class="btn btn-outline btn-sm" style="margin-top:10px" onclick="copyText('${tags}',this)">📋 Copier tout</button>`;
+    notify('Hashtags générés !', 'success');
+  }
+}
+
+async function copyText(text, btn) {
+  try {
+    await navigator.clipboard.writeText(text);
+    const orig = btn.innerHTML;
+    btn.innerHTML = '✅'; setTimeout(() => btn.innerHTML = orig, 1500);
+    notify('Copié dans le presse-papiers !', 'success');
+  } catch { notify('Copie non disponible dans ce contexte.', 'warning'); }
+}
+
+// ── PLATFORM TABS ─────────────────────────────────────────
+function setPlatformTab(el) {
+  const parent = el.closest('.ai-tool-card') || el.closest('.auth-tabs');
+  if (parent) parent.querySelectorAll('.platform-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+}
+
+// ── SOUS-TITRES ───────────────────────────────────────────
 function updateSubtitlePreview(sel) {
   document.getElementById('subtitlePreview').style.fontSize = sel.value;
 }
 
-// ================= NOTIFICATIONS =================
+// ── LIBRARY ───────────────────────────────────────────────
+const LIBRARY_DATA = [
+  {emoji:'🎮', title:'GTA RP – Braquage épique',     format:'TikTok', date:'08/06/2026', status:'ready',      bg:''},
+  {emoji:'⚔️', title:'Minecraft – Dragon Kill',      format:'Shorts', date:'07/06/2026', status:'ready',      bg:'background:linear-gradient(135deg,#1a2a1a,#0d0f14)'},
+  {emoji:'🔫', title:'Valorant – Ace clip',           format:'Reels',  date:'06/06/2026', status:'converting', bg:'background:linear-gradient(135deg,#1a1a2a,#0d0f14)'},
+  {emoji:'🏆', title:'Fortnite – Victory Royale',    format:'TikTok', date:'05/06/2026', status:'ready',      bg:'background:linear-gradient(135deg,#2a1a1a,#0d0f14)'},
+  {emoji:'🌊', title:'Just Chatting – Moment drôle', format:'Shorts', date:'04/06/2026', status:'ready',      bg:'background:linear-gradient(135deg,#1a2a2a,#0d0f14)'},
+  {emoji:'⚡', title:'LoL – Penta Kill Clean',        format:'Reels',  date:'03/06/2026', status:'ready',      bg:'background:linear-gradient(135deg,#2a2a1a,#0d0f14)'},
+];
+let libraryData = [...LIBRARY_DATA];
+
+function renderLibrary() {
+  const grid   = document.getElementById('libraryGrid');
+  if (!grid) return;
+  const search = (document.getElementById('librarySearch')?.value || '').toLowerCase();
+  const fmt    = document.getElementById('libraryFormatFilter')?.value || '';
+  const status = document.getElementById('libraryStatusFilter')?.value || '';
+  const filtered = libraryData.filter(v => {
+    if (search && !v.title.toLowerCase().includes(search)) return false;
+    if (fmt    && fmt    !== 'Tous formats' && v.format !== fmt) return false;
+    if (status && status !== 'Tous statuts') {
+      if (status === 'Prêt' && v.status !== 'ready') return false;
+      if (status === 'En conversion' && v.status !== 'converting') return false;
+    }
+    return true;
+  });
+  grid.innerHTML = filtered.map((v, i) => `<div class="video-thumb">
+    <div class="vt-preview" style="${v.bg}">${v.emoji}<div class="vt-overlay">▶</div></div>
+    <div class="vt-info">
+      <div class="vt-name">${v.title}</div>
+      <div class="vt-meta"><span>${v.format}</span><span>${v.date}</span></div>
+      <div style="margin-top:5px"><span style="font-size:11px;font-weight:600;color:${v.status==='ready'?'var(--accent)':'var(--yellow)'}">${v.status==='ready'?'✅ Prêt':'⏳ En conversion'}</span></div>
+      <div style="display:flex;gap:4px;margin-top:8px">
+        <button class="btn btn-outline btn-sm" onclick="notify('Téléchargement démarré !','info')">⬇️</button>
+        <button class="btn btn-outline btn-sm" onclick="notify('Éditeur à venir dans la prochaine version','info')">✏️</button>
+        <button class="btn btn-danger btn-sm"  onclick="removeLibraryItem(${i})">🗑️</button>
+      </div>
+    </div>
+  </div>`).join('') || '<div class="empty-state" style="grid-column:1/-1"><div class="es-icon">🎬</div><p>Aucune vidéo ne correspond à vos filtres</p></div>';
+}
+
+function removeLibraryItem(idx) {
+  libraryData.splice(idx, 1);
+  renderLibrary();
+  notify('Vidéo supprimée.', 'info');
+}
+
+// ── SETTINGS ─────────────────────────────────────────────
+function applySettings() {
+  const un = document.getElementById('settingsUsername');
+  const em = document.getElementById('settingsEmail');
+  if (un) un.value = profile.username;
+  if (em) em.value = profile.email;
+  document.querySelectorAll('.platform-item').forEach(p => {
+    p.classList.toggle('active', p.textContent.trim() === profile.platform);
+  });
+  document.getElementById('n1').checked = userSettings.n1 !== false;
+  document.getElementById('n2').checked = userSettings.n2 !== false;
+  document.getElementById('n3').checked = userSettings.n3 === true;
+  document.getElementById('n4').checked = userSettings.n4 !== false;
+}
+
+function saveSettings() {
+  const un = document.getElementById('settingsUsername')?.value.trim();
+  const em = document.getElementById('settingsEmail')?.value.trim();
+  if (un) profile.username = un;
+  if (em) profile.email    = em;
+  userSettings = {
+    n1: document.getElementById('n1').checked,
+    n2: document.getElementById('n2').checked,
+    n3: document.getElementById('n3').checked,
+    n4: document.getElementById('n4').checked,
+  };
+  DB.set('profile', profile);
+  DB.set('userSettings', userSettings);
+  applyProfile();
+  notify('Profil mis à jour avec succès !', 'success');
+}
+
+// ── NOTIFICATIONS ─────────────────────────────────────────
 function notify(msg, type = 'info') {
   const container = document.getElementById('notifications');
   const el = document.createElement('div');
   el.className = `notif-item ${type}`;
-  const icons = { success: '✅', info: '💡', warning: '⚠️' };
-  el.innerHTML = `<span>${icons[type]||'ℹ️'}</span><span>${msg}</span>`;
+  el.innerHTML = `<span>${{success:'✅',info:'💡',warning:'⚠️'}[type]||'ℹ️'}</span><span>${msg}</span>`;
   container.appendChild(el);
-  setTimeout(() => { el.style.opacity = '0'; el.style.transform = 'translateX(40px)'; el.style.transition = 'all .3s'; setTimeout(() => el.remove(), 300); }, 3500);
+  setTimeout(() => { el.style.cssText += ';opacity:0;transform:translateX(40px);transition:all .3s'; setTimeout(() => el.remove(), 300); }, 3500);
 }
 
-// Close modal on overlay click
-document.querySelectorAll('.modal-overlay').forEach(m => {
-  m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); });
-});
-
-// Titlebar maximize toggle
+// ── TITLEBAR ──────────────────────────────────────────────
 async function toggleMax() {
   if (!window.electronAPI) return;
   await window.electronAPI.maximize();
@@ -1738,51 +1998,41 @@ async function toggleMax() {
   document.getElementById('maxBtn').innerHTML = isMax ? '&#x2750;' : '&#x25A1;';
 }
 
-// ================= MISES À JOUR =================
+// ── MISES À JOUR ──────────────────────────────────────────
 let _pendingVersion = null;
 
 function setUpdateBtn(state, label, icon) {
   const btn = document.getElementById('updateBtn');
+  if (btn) btn.className = 'btn btn-outline btn-sm state-' + state;
   const lbl = document.getElementById('updateBtnLabel');
   const ico = document.getElementById('updateBtnIcon');
-  btn.className = 'btn btn-outline btn-sm state-' + state;
   if (lbl) lbl.textContent = label;
   if (ico) ico.textContent = icon;
 }
 
 async function initUpdater() {
   if (!window.electronAPI) return;
-
-  // Afficher la version dans la titlebar
   const v = await window.electronAPI.getVersion();
   const tag = document.getElementById('appVersionTag');
   if (tag) tag.textContent = 'v' + v;
-
-  // Bouton visible, état neutre
   setUpdateBtn('checking', 'Mise à jour', '🔄');
-
-  // Écouter les événements de téléchargement
-  window.electronAPI.onDownloadProgress((pct) => {
+  window.electronAPI.onDownloadProgress(pct => {
     document.getElementById('updateProgressFill').style.width = pct + '%';
     document.getElementById('updateProgressLabel').textContent = 'Téléchargement… ' + pct + '%';
     setUpdateBtn('downloading', pct + '%', '⬇️');
   });
-
-  window.electronAPI.onDownloadReady((version) => {
+  window.electronAPI.onDownloadReady(version => {
     showUpdateState('ready');
     document.getElementById('updateModalClose').style.display = 'flex';
     setUpdateBtn('ready', 'Installer v' + version, '🚀');
     showUpdateBanner(version, true);
   });
-
-  window.electronAPI.onDownloadError((msg) => {
+  window.electronAPI.onDownloadError(msg => {
     showUpdateState('error');
     document.getElementById('updateErrorMsg').textContent = '❌ Erreur : ' + (msg || 'Téléchargement échoué');
     document.getElementById('updateModalClose').style.display = 'flex';
     setUpdateBtn('checking', 'Mise à jour', '🔄');
   });
-
-  // Vérification silencieuse au démarrage (pas de résultat dans le modal)
   setTimeout(() => checkForUpdates(false), 3000);
 }
 
@@ -1791,60 +2041,40 @@ async function checkForUpdates(showModalResult = false) {
   try {
     setUpdateBtn('checking', 'Vérification…', '🔄');
     if (showModalResult) showUpdateState('checking');
-
     const result = await window.electronAPI.checkUpdate();
-
     if (!result.available) {
       setUpdateBtn('uptodate', 'À jour', '✅');
       setTimeout(() => setUpdateBtn('checking', 'Mise à jour', '🔄'), 4000);
       if (showModalResult) {
-        const cur = result.current || result.remoteVersion || '–';
-        document.getElementById('updateCurrentVersion').textContent = 'Version installée : v' + cur;
+        document.getElementById('updateCurrentVersion').textContent = 'Version installée : v' + (result.current || result.remoteVersion || '–');
         showUpdateState('uptodate');
       }
       return;
     }
-
     _pendingVersion = result.version;
     document.getElementById('updateVersionBadge').textContent = 'v' + result.version;
-    document.getElementById('updateVersionCompare').textContent =
-      'Installée : v' + result.current + '  →  Nouvelle : v' + result.version;
-
+    document.getElementById('updateVersionCompare').textContent = 'Installée : v' + result.current + '  →  Nouvelle : v' + result.version;
     if (result.ready) {
-      showUpdateState('ready');
-      setUpdateBtn('ready', 'Installer v' + result.version, '🚀');
-      showUpdateBanner(result.version, true);
+      showUpdateState('ready'); setUpdateBtn('ready', 'Installer v' + result.version, '🚀'); showUpdateBanner(result.version, true);
     } else {
-      showUpdateState('idle');
-      setUpdateBtn('available', 'v' + result.version + ' dispo', '⬆️');
-      showUpdateBanner(result.version, false);
+      showUpdateState('idle'); setUpdateBtn('available', 'v' + result.version + ' dispo', '⬆️'); showUpdateBanner(result.version, false);
     }
-  } catch {
-    setUpdateBtn('checking', 'Mise à jour', '🔄');
-    if (showModalResult) showUpdateState('error');
-  }
+  } catch { setUpdateBtn('checking', 'Mise à jour', '🔄'); if (showModalResult) showUpdateState('error'); }
 }
 
 function openUpdateModal() {
   openModal('updateModal');
-  // Toujours re-vérifier à l'ouverture du modal (sauf si téléchargement en cours)
-  const isDownloading = document.getElementById('updateStateDownloading').style.display === 'block';
+  const isDL    = document.getElementById('updateStateDownloading').style.display === 'block';
   const isReady = document.getElementById('updateStateReady').style.display === 'block';
-  if (!isDownloading && !isReady) {
-    checkForUpdates(true);
-  }
+  if (!isDL && !isReady) checkForUpdates(true);
 }
 
 function showUpdateBanner(version, ready) {
-  const banner = document.getElementById('updateBanner');
-  const text = document.getElementById('updateBannerText');
-  text.textContent = ready
-    ? `v${version} téléchargée — prête à installer`
-    : `v${version} disponible`;
-  banner.classList.add('visible');
-  document.querySelector('.sidebar').style.top = (38 + 46) + 'px';
-  document.querySelector('.main').style.maxHeight = 'calc(100vh - ' + (38 + 46) + 'px)';
-  document.querySelectorAll('.topbar').forEach(t => t.style.top = (38 + 46) + 'px');
+  document.getElementById('updateBannerText').textContent = ready ? `v${version} téléchargée — prête à installer` : `v${version} disponible`;
+  document.getElementById('updateBanner').classList.add('visible');
+  document.querySelector('.sidebar').style.top = '84px';
+  document.querySelector('.main').style.maxHeight = 'calc(100vh - 84px)';
+  document.querySelectorAll('.topbar').forEach(t => t.style.top = '84px');
 }
 
 function dismissUpdateBanner() {
@@ -1855,7 +2085,7 @@ function dismissUpdateBanner() {
 }
 
 function showUpdateState(state) {
-  ['checking', 'uptodate', 'idle', 'downloading', 'ready', 'error'].forEach(s => {
+  ['checking','uptodate','idle','downloading','ready','error'].forEach(s => {
     const el = document.getElementById('updateState' + s.charAt(0).toUpperCase() + s.slice(1));
     if (el) el.style.display = s === state ? 'block' : 'none';
   });
@@ -1877,12 +2107,33 @@ async function installAndRestart() {
 }
 
 function openReleaseNotes() {
-  if (window.electronAPI)
-    window.electronAPI.openUrl('https://github.com/shootinger/streamhub/releases/latest');
+  if (window.electronAPI) window.electronAPI.openUrl('https://github.com/shootinger/streamhub/releases/latest');
 }
 
-// Init au chargement
-document.addEventListener('DOMContentLoaded', initUpdater);
+// ── INITIALISATION ────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  // Fermer modals sur clic overlay
+  document.querySelectorAll('.modal-overlay').forEach(m => {
+    m.addEventListener('click', e => { if (e.target === m) closeModal(m.id); });
+  });
+
+  // Platform tabs
+  document.querySelectorAll('.platform-tab').forEach(tab => {
+    tab.addEventListener('click', () => setPlatformTab(tab));
+  });
+
+  // Danger zone settings
+  const dangerBtns = document.querySelectorAll('#page-settings .btn-danger');
+  if (dangerBtns[0]) dangerBtns[0].onclick = () => notify('Fonctionnalité désactivée en version locale.', 'warning');
+  if (dangerBtns[1]) dangerBtns[1].onclick = () => { if (confirm('Se déconnecter ?')) logout(); };
+
+  // Auth persistée
+  if (DB.get('authed', false)) {
+    showApp();
+  }
+
+  initUpdater();
+});
 </script>
 </body>
 </html>

@@ -144,7 +144,7 @@ function createWindow() {
     height: 800,
     minWidth: 900,
     minHeight: 600,
-    title: 'StreamHub',
+    title: 'Créatique',
     icon: path.join(__dirname, 'assets', 'icon.ico'),
     backgroundColor: '#0D0F14',
     show: false,
@@ -251,7 +251,7 @@ ipcMain.handle('start-download', async (event) => {
     event.sender.send('update-download-ready', v);
     if (Notification.isSupported()) {
       new Notification({
-        title: 'StreamHub',
+        title: 'Créatique',
         body: `Mise à jour v${v} prête — cliquez Redémarrer pour installer.`
       }).show();
     }
