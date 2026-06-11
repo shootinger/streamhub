@@ -1,6 +1,6 @@
 {
   "name": "streamhub",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "StreamHub — Studio de contenu pour streamers",
   "author": "shootinger",
   "main": "main.js",
