@@ -1,35 +1,28 @@
 {
   "name": "streamhub",
   "version": "1.0.0",
-  "description": "StreamHub — Votre studio de contenu",
+  "description": "StreamHub — Studio de contenu pour streamers",
   "author": "shootinger",
   "main": "main.js",
   "scripts": {
-    "start": "npx electron .",
-    "build": "electron-builder --win --x64",
-    "package": "npx @electron/packager . StreamHub --platform=win32 --arch=x64 --out=dist-pkg --overwrite --icon=assets/icon.ico --ignore=node_modules --ignore=dist --ignore=dist-pkg --app-version=1.0.0 --no-asar"
+    "start": "electron .",
+    "build": "electron-builder --win --x64"
   },
   "build": {
     "appId": "com.streamhub.app",
     "productName": "StreamHub",
-    "copyright": "StreamHub 2026",
     "directories": {
-      "output": "dist"
+      "output": "C:\\Users\\geoff\\Desktop\\StreamHub-Build"
     },
-    "asar": false,
     "win": {
       "target": [
         {
           "target": "nsis",
-          "arch": [
-            "x64"
-          ]
+          "arch": ["x64"]
         },
         {
-          "target": "portable",
-          "arch": [
-            "x64"
-          ]
+          "target": "zip",
+          "arch": ["x64"]
         }
       ],
       "icon": "assets/icon.ico"
@@ -37,23 +30,25 @@
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
-      "createDesktopShortcut": true,
+      "createDesktopShortcut": false,
       "createStartMenuShortcut": true,
-      "installerIcon": "assets/icon.ico",
-      "uninstallerIcon": "assets/icon.ico",
-      "installerHeaderIcon": "assets/icon.ico",
-      "shortcutName": "StreamHub"
+      "shortcutName": "StreamHub",
+      "perMachine": false,
+      "allowElevation": true,
+      "runAfterFinish": true,
+      "include": "installer.nsh"
     },
     "files": [
       "main.js",
       "preload.js",
       "index.html",
-      "assets/**"
+      "assets/**",
+      "version.json"
     ]
   },
   "devDependencies": {
     "@electron/packager": "^20.0.1",
-    "electron": "^42.4.0",
-    "electron-builder": "^26.15.2"
+    "electron": "^30.5.1",
+    "electron-builder": "^24.13.3"
   }
 }
