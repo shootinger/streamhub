@@ -99,22 +99,22 @@
   .sidebar-logo img.logo-full { width:110px; height:36px; object-fit:contain; transition:all 0.2s; }
   .sidebar-logo span { color:var(--text); }
   .nav-item {
-    width:48px; height:48px; border-radius:12px; display:flex; align-items:center; justify-content:center;
+    width:36px; height:36px; border-radius:10px; display:flex; align-items:center; justify-content:center;
     cursor:pointer; transition:all .2s; position:relative; flex-shrink:0; color:var(--text2);
   }
   .sidebar.expanded .nav-item { width:100%; padding:0 12px; gap:12px; justify-content:flex-start; }
   .nav-item:hover { background:var(--primary-dim); color:var(--primary); }
   .nav-item.active { background:var(--primary-dim); color:var(--primary); }
   .nav-item.active::before {
-    content:''; position:absolute; left:-6px; top:50%; transform:translateY(-50%);
-    width:3px; height:24px; background:var(--primary); border-radius:0 3px 3px 0;
+    content:''; position:absolute; left:-12px; top:50%; transform:translateY(-50%);
+    width:3px; height:20px; background:var(--primary); border-radius:0 3px 3px 0;
   }
   .sidebar.expanded .nav-item.active::before { display:none; }
   .nav-label { font-size:13px; font-weight:500; white-space:nowrap; overflow:hidden; opacity:0; transition:opacity .2s; }
   .sidebar.expanded .nav-label { opacity:1; }
   .nav-icon { font-size:20px; flex-shrink:0; }
   .sidebar-toggle {
-    width:48px; height:36px; border-radius:10px; background:var(--card);
+    width:36px; height:36px; border-radius:10px; background:var(--card);
     display:flex; align-items:center; justify-content:center; cursor:pointer; color:var(--text2);
     border:1px solid var(--border); transition:all .2s; flex-shrink:0; margin-bottom:6px;
   }
