@@ -99,10 +99,10 @@
   .sidebar-logo img.logo-full { width:110px; height:36px; object-fit:contain; transition:all 0.2s; }
   .sidebar-logo span { color:var(--text); }
   .nav-item {
-    width:36px; height:36px; border-radius:10px; display:flex; align-items:center; justify-content:center;
+    width:36px; height:36px; border-radius:10px; display:grid; place-items:center;
     cursor:pointer; transition:all .2s; position:relative; flex-shrink:0; color:var(--text2);
   }
-  .sidebar.expanded .nav-item { width:100%; padding:0 12px; gap:12px; justify-content:flex-start; }
+  .sidebar.expanded .nav-item { width:100%; display:flex; padding:0 12px; gap:12px; align-items:center; justify-content:flex-start; }
   .nav-item:hover { background:var(--primary-dim); color:var(--primary); }
   .nav-item.active { background:var(--primary-dim); color:var(--primary); }
   .nav-item.active::before {
@@ -112,7 +112,7 @@
   .sidebar.expanded .nav-item.active::before { display:none; }
   .nav-label { font-size:13px; font-weight:500; white-space:nowrap; overflow:hidden; opacity:0; transition:opacity .2s; }
   .sidebar.expanded .nav-label { opacity:1; }
-  .nav-icon { font-size:18px; flex-shrink:0; line-height:1; display:block; text-align:center; }
+  .nav-icon { font-size:18px; line-height:1; display:block; width:18px; height:18px; overflow:visible; }
   .sidebar-toggle {
     width:36px; height:36px; border-radius:10px; background:var(--card);
     display:flex; align-items:center; justify-content:center; cursor:pointer; color:var(--text2);
