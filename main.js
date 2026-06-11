@@ -7,7 +7,7 @@ const http = require('http');
 const { execSync } = require('child_process');
 
 // ── Constantes mise à jour ──────────────────────────────────────────────────
-const UPDATE_CHECK_URL = 'https://raw.githubusercontent.com/shootinger/streamhub/master/version.json';
+const UPDATE_CHECK_URL = 'https://raw.githubusercontent.com/shootinger/streamhub/main/version.json';
 const STREAMHUB_UPDATE_DIR = path.join(os.homedir(), 'AppData', 'Local', 'streamhub-updater');
 const PENDING_INSTALLER_PATH = path.join(STREAMHUB_UPDATE_DIR, 'streamhub-setup.exe');
 const PENDING_INSTALLER_MARKER = path.join(STREAMHUB_UPDATE_DIR, 'update-ready.txt');
