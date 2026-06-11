@@ -24,7 +24,7 @@
   body { padding-top: 38px; }
   .sidebar { top: 38px !important; }
   .main { max-height: calc(100vh - 38px) !important; }
-  .topbar { top: 38px !important; }
+  .topbar { top: 0 !important; }
 
   /* BANNIÈRE MISE À JOUR */
   .update-banner {
@@ -106,7 +106,7 @@
   .nav-item:hover { background:var(--primary-dim); color:var(--primary); }
   .nav-item.active { background:var(--primary-dim); color:var(--primary); }
   .nav-item.active::before {
-    content:''; position:absolute; left:0; top:50%; transform:translateY(-50%);
+    content:''; position:absolute; left:-6px; top:50%; transform:translateY(-50%);
     width:3px; height:24px; background:var(--primary); border-radius:0 3px 3px 0;
   }
   .sidebar.expanded .nav-item.active::before { display:none; }
@@ -114,9 +114,9 @@
   .sidebar.expanded .nav-label { opacity:1; }
   .nav-icon { font-size:20px; flex-shrink:0; }
   .sidebar-toggle {
-    margin-top:auto; width:48px; height:40px; border-radius:10px; background:var(--card);
+    width:48px; height:36px; border-radius:10px; background:var(--card);
     display:flex; align-items:center; justify-content:center; cursor:pointer; color:var(--text2);
-    border:1px solid var(--border); transition:all .2s; flex-shrink:0;
+    border:1px solid var(--border); transition:all .2s; flex-shrink:0; margin-bottom:6px;
   }
   .sidebar.expanded .sidebar-toggle { width:100%; }
   .sidebar-toggle:hover { color:var(--text); border-color:var(--primary); }
@@ -844,6 +844,9 @@
 <!-- SIDEBAR -->
 <nav class="sidebar" id="sidebar">
   <div class="sidebar-logo" id="sidebarLogo"><img id="sidebarLogoImg" src="assets/logo.png" alt="Créatique" class="logo-icon"></div>
+  <div class="sidebar-toggle" onclick="toggleSidebar()" title="Agrandir/Réduire">
+    <span id="toggleIcon">▶</span>
+  </div>
   <div class="nav-item active" onclick="navigate('dashboard',this)" title="Dashboard">
     <span class="nav-icon">⚡</span><span class="nav-label">Dashboard</span>
   </div>
@@ -873,9 +876,6 @@
   </div>
   <div class="nav-item" onclick="navigate('settings',this)" title="Paramètres">
     <span class="nav-icon">⚙️</span><span class="nav-label">Paramètres</span>
-  </div>
-  <div class="sidebar-toggle" onclick="toggleSidebar()" title="Agrandir">
-    <span id="toggleIcon">▶</span>
   </div>
 </nav>
 
@@ -2430,14 +2430,14 @@ function showUpdateBanner(version, ready) {
   document.getElementById('updateBanner').classList.add('visible');
   document.querySelector('.sidebar').style.top = '84px';
   document.querySelector('.main').style.maxHeight = 'calc(100vh - 84px)';
-  document.querySelectorAll('.topbar').forEach(t => t.style.top = '84px');
+  document.querySelectorAll('.topbar').forEach(t => t.style.top = '46px');
 }
 
 function dismissUpdateBanner() {
   document.getElementById('updateBanner').classList.remove('visible');
   document.querySelector('.sidebar').style.top = '38px';
   document.querySelector('.main').style.maxHeight = 'calc(100vh - 38px)';
-  document.querySelectorAll('.topbar').forEach(t => t.style.top = '38px');
+  document.querySelectorAll('.topbar').forEach(t => t.style.top = '0px');
 }
 
 function showUpdateState(state) {
