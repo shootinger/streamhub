@@ -1151,7 +1151,7 @@
               <label class="form-label">Défis à réaliser</label>
               <input class="form-input" placeholder="Ex: Gagner sans armure, challenge chat...">
             </div>
-            <button class="btn btn-primary" style="width:100%; justify-content:center; margin-top:8px;">💾 Sauvegarder la préparation</button>
+            <button class="btn btn-primary" style="width:100%; justify-content:center; margin-top:8px;" onclick="savePrepData()">💾 Sauvegarder la préparation</button>
           </div>
         </div>
       </div>
@@ -1396,7 +1396,7 @@
         <div id="aiDescResult" class="ai-result" style="margin-top:14px; display:none;"></div>
       </div>
 
-      <div class="ai-tool-card">
+      <div class="ai-tool-card" id="aiHashtagCard">
         <div class="ai-tool-header">
           <div class="ai-tool-icon" style="background:rgba(255,209,102,.15)">🔖</div>
           <div>
@@ -1447,12 +1447,12 @@
       <div class="settings-section">
         <div class="settings-title">📡 Plateforme principale</div>
         <div class="platform-select-grid">
-          <div class="platform-item active" onclick="selectPlatform(this)"><div class="pi-icon">💜</div>Twitch</div>
-          <div class="platform-item" onclick="selectPlatform(this)"><div class="pi-icon">🔴</div>YouTube</div>
-          <div class="platform-item" onclick="selectPlatform(this)"><div class="pi-icon">🎵</div>TikTok</div>
-          <div class="platform-item" onclick="selectPlatform(this)"><div class="pi-icon">🟢</div>Kick</div>
-          <div class="platform-item" onclick="selectPlatform(this)"><div class="pi-icon">🔵</div>Facebook Gaming</div>
-          <div class="platform-item" onclick="selectPlatform(this)"><div class="pi-icon">🌐</div>Multi-plateforme</div>
+          <div class="platform-item" data-platform="Twitch" onclick="selectPlatform(this)"><div class="pi-icon">💜</div>Twitch</div>
+          <div class="platform-item" data-platform="YouTube" onclick="selectPlatform(this)"><div class="pi-icon">🔴</div>YouTube</div>
+          <div class="platform-item" data-platform="TikTok" onclick="selectPlatform(this)"><div class="pi-icon">🎵</div>TikTok</div>
+          <div class="platform-item" data-platform="Kick" onclick="selectPlatform(this)"><div class="pi-icon">🟢</div>Kick</div>
+          <div class="platform-item" data-platform="Facebook Gaming" onclick="selectPlatform(this)"><div class="pi-icon">🔵</div>Facebook Gaming</div>
+          <div class="platform-item" data-platform="Multi-plateforme" onclick="selectPlatform(this)"><div class="pi-icon">🌐</div>Multi-plateforme</div>
         </div>
       </div>
       <div class="settings-section">
@@ -1464,12 +1464,20 @@
           <div class="checklist-item"><input type="checkbox" id="n4" checked><label for="n4">Vidéo prête à télécharger</label></div>
         </div>
       </div>
+      <div class="settings-section">
+        <div class="settings-title">💾 Données</div>
+        <p style="font-size:13px; color:var(--text2); margin-bottom:16px;">Exportez ou importez vos données Créatique.</p>
+        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+          <button class="btn btn-outline btn-sm" onclick="exportData()">📤 Exporter mes données</button>
+          <button class="btn btn-outline btn-sm" onclick="resetToDemo()">🔄 Réinitialiser données démo</button>
+        </div>
+      </div>
       <div class="settings-section" style="border-color:var(--danger);">
         <div class="settings-title" style="color:var(--danger);">⚠️ Zone de danger</div>
         <p style="font-size:13px; color:var(--text2); margin-bottom:16px;">Ces actions sont irréversibles. Procédez avec précaution.</p>
         <div style="display:flex; gap:10px;">
-          <button class="btn btn-danger btn-sm">Supprimer toutes les vidéos</button>
-          <button class="btn btn-danger btn-sm">Supprimer mon compte</button>
+          <button class="btn btn-danger btn-sm" onclick="clearAllData()">🗑️ Effacer toutes les données</button>
+          <button class="btn btn-danger btn-sm" onclick="logout()">🚪 Se déconnecter</button>
         </div>
       </div>
     </div>
@@ -1559,11 +1567,24 @@ const DEFAULT_IDEAS = [
 ];
 
 // ── État global ───────────────────────────────────────────
+// Seed les données par défaut si c'est le 1er lancement
+function seedDefaults() {
+  const existingStreams = DB.get('streams', null);
+  if (!DB.get('seeded', false) || existingStreams === null || existingStreams.length === 0) {
+    DB.set('streams', DEFAULT_STREAMS);
+    DB.set('timerHistory', DEFAULT_HISTORY);
+    DB.set('savedIdeas', DEFAULT_IDEAS);
+    DB.set('seeded', true);
+  }
+}
+seedDefaults();
+
 let streams      = DB.get('streams', DEFAULT_STREAMS);
 let timerHistory = DB.get('timerHistory', DEFAULT_HISTORY);
 let savedIdeas   = DB.get('savedIdeas', DEFAULT_IDEAS);
 let profile      = DB.get('profile', {username:'StreamerTest', email:'test@creatique.fr', platform:'Twitch'});
 let userSettings = DB.get('userSettings', {n1:true, n2:true, n3:false, n4:true});
+let prepData     = DB.get('prepData', {title:'', game:'Minecraft', goal:'', moments:'', guests:'', events:'', challenges:''});
 let nextId       = DB.get('nextId', 10);
 let currentPage  = 'dashboard';
 let editingStreamId = null;
@@ -1653,6 +1674,42 @@ function applyProfile() {
   if (pa) pa.textContent = initials(profile.username);
 }
 
+// ── RÉINITIALISATION / EXPORT ─────────────────────────────
+function resetToDemo() {
+  if (!confirm('Réinitialiser toutes les données avec les données démo ?')) return;
+  DB.set('streams', DEFAULT_STREAMS);
+  DB.set('timerHistory', DEFAULT_HISTORY);
+  DB.set('savedIdeas', DEFAULT_IDEAS);
+  streams = [...DEFAULT_STREAMS];
+  timerHistory = [...DEFAULT_HISTORY];
+  savedIdeas = [...DEFAULT_IDEAS];
+  renderDashboard();
+  notify('Données démo rechargées !', 'success');
+}
+
+function clearAllData() {
+  if (!confirm('Effacer TOUTES les données ? Cette action est irréversible.')) return;
+  ['streams','timerHistory','savedIdeas','profile','userSettings','prepData','nextId','seeded'].forEach(k => localStorage.removeItem('creatique_' + k));
+  notify('Données effacées. Rechargement…', 'info');
+  setTimeout(() => location.reload(), 1500);
+}
+
+function exportData() {
+  const data = {
+    streams: DB.get('streams', []),
+    timerHistory: DB.get('timerHistory', []),
+    savedIdeas: DB.get('savedIdeas', []),
+    profile: DB.get('profile', {}),
+    exportDate: new Date().toISOString(),
+  };
+  const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'creatique-backup.json'; a.click();
+  URL.revokeObjectURL(url);
+  notify('Données exportées en JSON !', 'success');
+}
+
 // ── NAVIGATION ────────────────────────────────────────────
 const pageNames = {
   dashboard:'Dashboard', agenda:'Agenda', timer:'Horodateur',
@@ -1680,6 +1737,7 @@ function navigate(page, navEl) {
   if (page === 'settings')  applySettings();
   if (page === 'timer')     renderTimerHistory();
   if (page === 'library')   renderLibrary();
+  if (page === 'prep')      loadPrepData();
 }
 
 // ── SIDEBAR ───────────────────────────────────────────────
@@ -2007,7 +2065,7 @@ function selectFormat(el) {
 function selectPlatform(el) {
   document.querySelectorAll('.platform-item').forEach(p => p.classList.remove('active'));
   el.classList.add('active');
-  profile.platform = el.textContent.trim();
+  profile.platform = el.dataset.platform || el.textContent.replace(/^\p{Emoji_Presentation}+/u,'').trim();
   DB.set('profile', profile);
 }
 
@@ -2132,7 +2190,7 @@ function generateAIContent(type) {
       <button class="btn btn-outline btn-sm" style="margin-top:10px" onclick="copyText(\`${aiDesc.replace(/`/g,'\\`')}\`,this)">📋 Copier</button>`;
     notify('Description générée !', 'success');
   } else if (type === 'hashtags') {
-    const activeTab = document.querySelector('#page-ai .ai-tool-card:last-of-type .platform-tab.active');
+    const activeTab = document.querySelector('#aiHashtagCard .platform-tab.active');
     const platform  = activeTab ? activeTab.textContent.toLowerCase().trim() : 'tiktok';
     const key = platform.includes('short') ? 'shorts' : platform.includes('reel') ? 'reels' : 'tiktok';
     const tags = aiHashtags[key];
@@ -2153,6 +2211,35 @@ async function copyText(text, btn) {
     btn.innerHTML = '✅'; setTimeout(() => btn.innerHTML = orig, 1500);
     notify('Copié dans le presse-papiers !', 'success');
   } catch { notify('Copie non disponible dans ce contexte.', 'warning'); }
+}
+
+// ── PRÉPARATION ───────────────────────────────────────────
+function loadPrepData() {
+  prepData = DB.get('prepData', {});
+  const inputs = document.querySelectorAll('#page-prep .form-input, #page-prep .form-textarea, #page-prep .form-select');
+  if (prepData.title)      { const el = document.querySelector('#page-prep .form-input'); if (el) el.value = prepData.title; }
+  if (prepData.goal)       { const els = document.querySelectorAll('#page-prep .form-input'); if (els[1]) els[1].value = prepData.goal; }
+  if (prepData.moments)    { const el = document.querySelector('#page-prep .form-textarea'); if (el) el.value = prepData.moments; }
+  if (prepData.game) {
+    const sel = document.querySelector('#page-prep .form-select');
+    if (sel) sel.value = prepData.game;
+  }
+}
+
+function savePrepData() {
+  const inputs  = document.querySelectorAll('#page-prep .form-input');
+  const sel     = document.querySelector('#page-prep .form-select');
+  const textarea = document.querySelector('#page-prep .form-textarea');
+  prepData = {
+    title:    inputs[0] ? inputs[0].value : '',
+    game:     sel ? sel.value : 'Minecraft',
+    goal:     inputs[1] ? inputs[1].value : '',
+    moments:  textarea ? textarea.value : '',
+    guests:   inputs[2] ? inputs[2].value : '',
+    challenges: inputs[3] ? inputs[3].value : '',
+  };
+  DB.set('prepData', prepData);
+  notify('Préparation sauvegardée ! 📋', 'success');
 }
 
 // ── PLATFORM TABS ─────────────────────────────────────────
@@ -2220,13 +2307,16 @@ function applySettings() {
   const em = document.getElementById('settingsEmail');
   if (un) un.value = profile.username;
   if (em) em.value = profile.email;
+  // Utilise data-platform pour éviter le bug du textContent avec emoji
   document.querySelectorAll('.platform-item').forEach(p => {
-    p.classList.toggle('active', p.textContent.trim() === profile.platform);
+    const name = p.dataset.platform || p.textContent.replace(/^\p{Emoji_Presentation}+/u,'').trim();
+    p.classList.toggle('active', name === profile.platform);
   });
   document.getElementById('n1').checked = userSettings.n1 !== false;
   document.getElementById('n2').checked = userSettings.n2 !== false;
   document.getElementById('n3').checked = userSettings.n3 === true;
   document.getElementById('n4').checked = userSettings.n4 !== false;
+  loadPrepData();
 }
 
 function saveSettings() {
@@ -2397,6 +2487,19 @@ document.addEventListener('DOMContentLoaded', () => {
   if (DB.get('authed', false)) {
     showApp();
   }
+
+  // Raccourcis clavier
+  document.addEventListener('keydown', e => {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') return;
+    if (e.ctrlKey && e.key === 'n') { e.preventDefault(); openStreamModal(null); }
+    if (e.ctrlKey && e.key === '1') navigate('dashboard', null);
+    if (e.ctrlKey && e.key === '2') navigate('agenda', null);
+    if (e.ctrlKey && e.key === '3') navigate('timer', null);
+    if (e.ctrlKey && e.key === '4') navigate('prep', null);
+    if (e.key === 'Escape') {
+      document.querySelectorAll('.modal-overlay.open').forEach(m => closeModal(m.id));
+    }
+  });
 
   initUpdater();
 });
