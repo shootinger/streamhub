@@ -89,7 +89,9 @@
     width:60px; min-height:100vh; background:var(--bg2); border-right:1px solid var(--border);
     display:flex; flex-direction:column; align-items:stretch; padding:10px 0; gap:4px;
     position:fixed; left:0; top:0; bottom:0; z-index:100; transition:width .25s ease;
+    overflow-y:auto; overflow-x:hidden;
   }
+  .sidebar::-webkit-scrollbar { width:0; }
   .sidebar.expanded { width:220px; padding:10px 12px; }
   .sidebar-logo {
     display:flex; align-items:center; justify-content:center;
@@ -1103,15 +1105,15 @@
             <div class="prep-section-title">📡 Informations générales</div>
             <div class="form-group">
               <label class="form-label">Titre du stream</label>
-              <input class="form-input" value="Minecraft SMP Saison 3 – Episode 12">
+              <input id="prepTitle" class="form-input" placeholder="Titre du stream...">
             </div>
             <div class="form-group">
               <label class="form-label">Jeu / Catégorie</label>
-              <select class="form-select"><option>Minecraft</option><option>GTA V RP</option><option>Valorant</option><option>Just Chatting</option><option>Fortnite</option><option>League of Legends</option></select>
+              <select id="prepGame" class="form-select"><option>Minecraft</option><option>GTA V RP</option><option>Valorant</option><option>Just Chatting</option><option>Fortnite</option><option>League of Legends</option></select>
             </div>
             <div class="form-group">
               <label class="form-label">Objectif du live</label>
-              <input class="form-input" placeholder="Ex: Finir le château, atteindre 500 viewers...">
+              <input id="prepGoal" class="form-input" placeholder="Ex: Finir le château, atteindre 500 viewers...">
             </div>
           </div>
           <div class="card">
@@ -1536,6 +1538,23 @@
 <!-- NOTIFICATIONS -->
 <div class="notif" id="notifications"></div>
 
+<!-- CONFIRM MODAL -->
+<div class="modal-overlay" id="confirmModal" onclick="if(event.target===this)_confirmReject()">
+  <div class="modal" style="max-width:400px;">
+    <div class="modal-header">
+      <div class="modal-title" id="confirmTitle">Confirmation</div>
+      <button class="modal-close" onclick="_confirmReject()">✕</button>
+    </div>
+    <div class="modal-body" style="padding:20px 24px;">
+      <p id="confirmMsg" style="font-size:14px;color:var(--text2);line-height:1.6;"></p>
+    </div>
+    <div class="modal-footer" style="display:flex;gap:10px;justify-content:flex-end;padding:16px 24px;">
+      <button class="btn btn-ghost" onclick="_confirmReject()">Annuler</button>
+      <button class="btn btn-danger" id="confirmOkBtn" onclick="_confirmAccept()">Confirmer</button>
+    </div>
+  </div>
+</div>
+
 <script>
 // ═══════════════════════════════════════════════════════════
 // CREATIQUE — Script principal
@@ -1548,13 +1567,17 @@ const DB = {
 };
 
 // ── Données par défaut ────────────────────────────────────
-const DEFAULT_STREAMS = [
-  {id:1, title:'Minecraft SMP Saison 3 – Episode 12', game:'Minecraft', date:'2026-06-13', time:'20:00', duration:'3h00', notes:''},
-  {id:2, title:'Just Chatting – Questions / Réponses', game:'Just Chatting', date:'2026-06-15', time:'17:00', duration:'2h00', notes:''},
-  {id:3, title:'GTA RP – Nouvelle vie en cours', game:'GTA V RP', date:'2026-06-17', time:'21:00', duration:'4h00', notes:''},
-  {id:4, title:'Minecraft SMP – Episode 13', game:'Minecraft', date:'2026-06-27', time:'20:00', duration:'3h00', notes:''},
-  {id:5, title:'Just Chatting – Q&A', game:'Just Chatting', date:'2026-06-30', time:'17:00', duration:'2h00', notes:''},
-];
+function makeDefaultStreams() {
+  const d = (offset) => { const dt = new Date(); dt.setDate(dt.getDate() + offset); return dt.toISOString().split('T')[0]; };
+  return [
+    {id:1, title:'Minecraft SMP Saison 3 – Episode 12', game:'Minecraft',    date:d(1),  time:'20:00', duration:'3h00', notes:''},
+    {id:2, title:'Just Chatting – Questions / Réponses', game:'Just Chatting',date:d(4),  time:'17:00', duration:'2h00', notes:''},
+    {id:3, title:'GTA RP – Nouvelle vie en cours',       game:'GTA V RP',    date:d(7),  time:'21:00', duration:'4h00', notes:''},
+    {id:4, title:'Minecraft SMP – Episode 13',           game:'Minecraft',    date:d(14), time:'20:00', duration:'3h00', notes:''},
+    {id:5, title:'Just Chatting – Q&A',                  game:'Just Chatting',date:d(18), time:'17:00', duration:'2h00', notes:''},
+  ];
+}
+const DEFAULT_STREAMS = makeDefaultStreams();
 const DEFAULT_HISTORY = [
   {id:1, date:'09/06', title:'GTA RP', planned:'3h00', actual:'3h12', actualMin:192},
   {id:2, date:'07/06', title:'Minecraft', planned:'2h30', actual:'2h45', actualMin:165},
@@ -1570,9 +1593,8 @@ const DEFAULT_IDEAS = [
 // ── État global ───────────────────────────────────────────
 // Seed les données par défaut si c'est le 1er lancement
 function seedDefaults() {
-  const existingStreams = DB.get('streams', null);
-  if (!DB.get('seeded', false) || existingStreams === null || existingStreams.length === 0) {
-    DB.set('streams', DEFAULT_STREAMS);
+  if (!DB.get('seeded', false)) {
+    DB.set('streams', makeDefaultStreams());
     DB.set('timerHistory', DEFAULT_HISTORY);
     DB.set('savedIdeas', DEFAULT_IDEAS);
     DB.set('seeded', true);
@@ -1645,10 +1667,17 @@ function switchAuthTab(tab, el) {
 }
 
 function loginUser() {
-  const nameInput  = document.querySelector('#registerForm input[type=text]');
-  const emailInput = document.querySelector('#loginForm input[type=email]');
-  if (nameInput && nameInput.value.trim())  profile.username = nameInput.value.trim();
-  if (emailInput && emailInput.value.trim()) profile.email   = emailInput.value.trim();
+  const isRegister = document.getElementById('registerForm').style.display !== 'none';
+  if (isRegister) {
+    const inputs = document.querySelectorAll('#registerForm .form-input');
+    if (inputs[0]?.value.trim()) profile.username = inputs[0].value.trim();
+    if (inputs[1]?.value.trim()) profile.email    = inputs[1].value.trim();
+    const platformSel = document.querySelector('#registerForm .form-select');
+    if (platformSel) profile.platform = platformSel.value;
+  } else {
+    const emailInput = document.querySelector('#loginForm input[type=email]');
+    if (emailInput?.value.trim()) profile.email = emailInput.value.trim();
+  }
   DB.set('profile', profile);
   DB.set('authed', true);
   showApp();
@@ -1677,22 +1706,21 @@ function applyProfile() {
 
 // ── RÉINITIALISATION / EXPORT ─────────────────────────────
 function resetToDemo() {
-  if (!confirm('Réinitialiser toutes les données avec les données démo ?')) return;
-  DB.set('streams', DEFAULT_STREAMS);
-  DB.set('timerHistory', DEFAULT_HISTORY);
-  DB.set('savedIdeas', DEFAULT_IDEAS);
-  streams = [...DEFAULT_STREAMS];
-  timerHistory = [...DEFAULT_HISTORY];
-  savedIdeas = [...DEFAULT_IDEAS];
-  renderDashboard();
-  notify('Données démo rechargées !', 'success');
+  creatConfirm('Réinitialiser toutes les données avec les données démo ?', () => {
+    const fresh = makeDefaultStreams();
+    DB.set('streams', fresh); DB.set('timerHistory', DEFAULT_HISTORY); DB.set('savedIdeas', DEFAULT_IDEAS);
+    streams = [...fresh]; timerHistory = [...DEFAULT_HISTORY]; savedIdeas = [...DEFAULT_IDEAS];
+    renderDashboard();
+    notify('Données démo rechargées !', 'success');
+  }, 'Réinitialiser');
 }
 
 function clearAllData() {
-  if (!confirm('Effacer TOUTES les données ? Cette action est irréversible.')) return;
-  ['streams','timerHistory','savedIdeas','profile','userSettings','prepData','nextId','seeded'].forEach(k => localStorage.removeItem('creatique_' + k));
-  notify('Données effacées. Rechargement…', 'info');
-  setTimeout(() => location.reload(), 1500);
+  creatConfirm('Effacer TOUTES les données ? Cette action est irréversible.', () => {
+    ['streams','timerHistory','savedIdeas','profile','userSettings','prepData','nextId','seeded'].forEach(k => localStorage.removeItem('creatique_' + k));
+    notify('Données effacées. Rechargement…', 'info');
+    setTimeout(() => location.reload(), 1500);
+  }, 'Effacer les données', true);
 }
 
 function exportData() {
@@ -1927,19 +1955,21 @@ function saveStream() {
 }
 
 function deleteStream(id) {
-  if (!confirm('Supprimer ce stream ?')) return;
-  streams = streams.filter(s => s.id !== id);
-  DB.set('streams', streams);
-  renderDashboard();
-  renderCalendar(); renderAgendaList();
-  notify('Stream supprimé.', 'info');
+  creatConfirm('Supprimer ce stream ?', () => {
+    streams = streams.filter(s => s.id !== id);
+    DB.set('streams', streams);
+    renderDashboard();
+    renderCalendar(); renderAgendaList();
+    notify('Stream supprimé.', 'info');
+  }, 'Supprimer', true);
 }
 
 function prepStream(id) {
   const s = streams.find(x => x.id === id);
   if (s) {
-    const inp = document.querySelector('#page-prep .form-input');
-    if (inp) inp.value = s.title;
+    prepData.title = s.title;
+    prepData.game  = s.game;
+    DB.set('prepData', prepData);
   }
   navigate('prep', null);
 }
@@ -2217,22 +2247,17 @@ async function copyText(text, btn) {
 // ── PRÉPARATION ───────────────────────────────────────────
 function loadPrepData() {
   prepData = DB.get('prepData', {});
-  const inputs = document.querySelectorAll('#page-prep .form-input, #page-prep .form-textarea, #page-prep .form-select');
-  if (prepData.title)      { const el = document.querySelector('#page-prep .form-input'); if (el) el.value = prepData.title; }
-  if (prepData.goal)       { const els = document.querySelectorAll('#page-prep .form-input'); if (els[1]) els[1].value = prepData.goal; }
-  if (prepData.moments)    { const el = document.querySelector('#page-prep .form-textarea'); if (el) el.value = prepData.moments; }
-  if (prepData.game) {
-    const sel = document.querySelector('#page-prep .form-select');
-    if (sel) sel.value = prepData.game;
-  }
+  const t = document.getElementById('prepTitle');   if (t) t.value = prepData.title   || '';
+  const g = document.getElementById('prepGame');    if (g) g.value = prepData.game    || 'Minecraft';
+  const o = document.getElementById('prepGoal');    if (o) o.value = prepData.goal    || '';
+  const m = document.querySelector('#page-prep .form-textarea'); if (m) m.value = prepData.moments || '';
 }
 
 function savePrepData() {
-  const inputs  = document.querySelectorAll('#page-prep .form-input');
-  const sel     = document.querySelector('#page-prep .form-select');
+  const sel     = document.getElementById('prepGame');
   const textarea = document.querySelector('#page-prep .form-textarea');
   prepData = {
-    title:    inputs[0] ? inputs[0].value : '',
+    title:    (document.getElementById('prepTitle')?.value || ''),
     game:     sel ? sel.value : 'Minecraft',
     goal:     inputs[1] ? inputs[1].value : '',
     moments:  textarea ? textarea.value : '',
@@ -2338,6 +2363,25 @@ function saveSettings() {
 }
 
 // ── NOTIFICATIONS ─────────────────────────────────────────
+// ── CONFIRM MODAL ─────────────────────────────────────────
+let _confirmCallback = null;
+function creatConfirm(msg, onConfirm, title = 'Confirmation', danger = false) {
+  document.getElementById('confirmMsg').textContent = msg;
+  document.getElementById('confirmTitle').textContent = title;
+  const btn = document.getElementById('confirmOkBtn');
+  btn.className = danger ? 'btn btn-danger' : 'btn btn-primary';
+  _confirmCallback = onConfirm;
+  document.getElementById('confirmModal').classList.add('open');
+}
+function _confirmAccept() {
+  document.getElementById('confirmModal').classList.remove('open');
+  if (_confirmCallback) { _confirmCallback(); _confirmCallback = null; }
+}
+function _confirmReject() {
+  document.getElementById('confirmModal').classList.remove('open');
+  _confirmCallback = null;
+}
+
 function notify(msg, type = 'info') {
   const container = document.getElementById('notifications');
   const el = document.createElement('div');
